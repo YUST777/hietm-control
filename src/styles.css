@@ -1,0 +1,88 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+  --page: #f7f7f5;
+  --surface-1: #ffffff;
+  --surface-2: #f0f0ee;
+  --surface-sunken: #e5e5e2;
+
+  --text-primary: #171717;
+  --text-secondary: #555555;
+  --text-muted: #888888;
+
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.16);
+
+  --scrollbar-thumb: #c8c8c4;
+  --scrollbar-thumb-hover: #9e9e98;
+  --scrollbar-track: transparent;
+
+  --accent: #1f4d78;
+  --accent-hover: #163756;
+  --accent-ink: #ffffff;
+}
+
+html, body {
+  font-family: 'Cairo', sans-serif;
+  background-color: var(--page);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* Custom sleek compact scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #1f4d78;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 6mm;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    zoom: 1 !important;
+    overflow: visible !important;
+  }
+
+  .print-hide {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+    padding: 3px 2px !important;
+  }
+}

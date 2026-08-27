@@ -1,0 +1,57 @@
+{
+  "name": "hietm-control-manager",
+  "version": "1.0.0",
+  "description": "HIET Control & Proctoring System",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && tsc --noEmit",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "electron:start": "cross-env ELECTRON_LOAD_FILE=1 electron .",
+    "electron:build:win": "npm run build && electron-builder --win portable --x64",
+    "electron:build:linux": "npm run build && electron-builder --linux AppImage --x64",
+    "electron:build": "npm run build && electron-builder --win portable --linux AppImage --x64"
+  },
+  "dependencies": {
+    "lucide-react": "^0.475.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "cross-env": "^10.1.0",
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5"
+  },
+  "build": {
+    "appId": "eg.edu.hietm.control",
+    "productName": "نظام الكنترول والمراقبات - المعهد العالي للهندسة",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "public/**/*"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
+  }
+}

@@ -5,28 +5,30 @@ import { Building, X, Check, Layers, Users } from 'lucide-react'
 interface EditCommitteeModalProps {
   isOpen: boolean
   committee: Committee | null // null = create new
+  floors?: string[]
   onClose: () => void
   onSave: (commData: Omit<Committee, 'id'>, id?: string) => void
 }
 
-const FLOORS = [
+const DEFAULT_FLOORS = [
+  'البدروم',
   'الدور الأرضي',
   'الدور الأول',
   'الدور الثاني',
   'الدور الثالث',
   'الدور الرابع',
-  'الدور الخامس',
 ]
 
 export const EditCommitteeModal: React.FC<EditCommitteeModalProps> = ({
   isOpen,
   committee,
+  floors = DEFAULT_FLOORS,
   onClose,
   onSave,
 }) => {
   const [roomNum, setRoomNum] = useState('')
   const [hallName, setHallName] = useState('')
-  const [floor, setFloor] = useState(FLOORS[0])
+  const [floor, setFloor] = useState(floors[0] || DEFAULT_FLOORS[0])
   const [capacity, setCapacity] = useState<number>(30)
   const [error, setError] = useState('')
 
@@ -35,17 +37,17 @@ export const EditCommitteeModal: React.FC<EditCommitteeModalProps> = ({
       if (committee) {
         setRoomNum(committee.roomNum)
         setHallName(committee.hallName)
-        setFloor(committee.floor || FLOORS[0])
+        setFloor(committee.floor || floors[0] || DEFAULT_FLOORS[0])
         setCapacity(committee.capacity || 30)
       } else {
         setRoomNum('')
         setHallName('')
-        setFloor(FLOORS[0])
+        setFloor(floors[0] || DEFAULT_FLOORS[0])
         setCapacity(30)
       }
       setError('')
     }
-  }, [isOpen, committee])
+  }, [isOpen, committee, floors])
 
   if (!isOpen) return null
 
@@ -146,7 +148,7 @@ export const EditCommitteeModal: React.FC<EditCommitteeModalProps> = ({
               onChange={(e) => setFloor(e.target.value)}
               className="h-8.5 w-full rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#171717] outline-none focus:border-[#1f4d78]"
             >
-              {FLOORS.map((f) => (
+              {floors.map((f) => (
                 <option key={f} value={f}>
                   {f}
                 </option>

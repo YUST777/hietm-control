@@ -5,15 +5,23 @@ import { EditObserverModal } from '../modals/EditObserverModal'
 
 interface ObserverDaysViewProps {
   observers: Observer[]
+  workDays?: string[]
+  jobTitles?: string[]
+  departments?: string[]
+  roleQuotas?: Record<string, number>
   onUpdateObserver: (id: string, updates: Partial<Observer>) => void
   onAddObserver: (obs: Omit<Observer, 'id'>) => void
   onUpdateObserverDays: (id: string, days: string) => void
 }
 
-const WEEK_DAYS = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس']
+const DEFAULT_WEEK_DAYS = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس']
 
 export const ObserverDaysView: React.FC<ObserverDaysViewProps> = ({
   observers,
+  workDays = DEFAULT_WEEK_DAYS,
+  jobTitles,
+  departments,
+  roleQuotas,
   onUpdateObserver,
   onAddObserver,
   onUpdateObserverDays,
@@ -52,7 +60,7 @@ export const ObserverDaysView: React.FC<ObserverDaysViewProps> = ({
   }
 
   const setAllDays = (obs: Observer) => {
-    onUpdateObserverDays(obs.id, WEEK_DAYS.join(', '))
+    onUpdateObserverDays(obs.id, workDays.join(', '))
   }
 
   const clearAllDays = (obs: Observer) => {
@@ -183,7 +191,7 @@ export const ObserverDaysView: React.FC<ObserverDaysViewProps> = ({
                     {/* Interactive Days */}
                     <td className="border-b border-l border-[#ecece9] px-3 py-1">
                       <div className="flex flex-wrap items-center justify-center gap-1">
-                        {WEEK_DAYS.map((d) => {
+                        {workDays.map((d) => {
                           const active = assignedDays.includes(d)
                           return (
                             <button
@@ -244,6 +252,10 @@ export const ObserverDaysView: React.FC<ObserverDaysViewProps> = ({
       <EditObserverModal
         isOpen={isModalOpen}
         observer={selectedObserverToEdit}
+        jobTitles={jobTitles}
+        departments={departments}
+        workDays={workDays}
+        roleQuotas={roleQuotas}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveModal}
       />

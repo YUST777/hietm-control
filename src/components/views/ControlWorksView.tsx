@@ -7,6 +7,8 @@ interface ControlWorksViewProps {
   subjects: Subject[]
   controlWorks: ControlWorkSubject[]
   controlStages?: string[]
+  departments?: string[]
+  studyLevels?: string[]
   onToggleItem: (subjectId: string, itemIndex: number) => void
   onToggleAllItems?: (subjectId: string, setAll: boolean) => void
   onUpdateSubject: (id: string, updates: Partial<Subject>) => void
@@ -34,6 +36,8 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
   subjects,
   controlWorks,
   controlStages = DEFAULT_STAGES,
+  departments: customDepartments,
+  studyLevels,
   onToggleItem,
   onUpdateSubject,
   onAddSubject,
@@ -65,10 +69,11 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
     })
   }, [subjects, search, deptFilter])
 
-  const departments = useMemo(() => {
+  const allDepartments = useMemo(() => {
+    if (customDepartments && customDepartments.length > 0) return customDepartments
     const set = new Set(subjects.map((s) => s.dept).filter(Boolean))
     return Array.from(set)
-  }, [subjects])
+  }, [customDepartments, subjects])
 
   // Stats calculation
   const stats = useMemo(() => {
@@ -156,7 +161,7 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
             className="h-7.5 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none cursor-pointer pr-2 pl-6"
           >
             <option value="ALL">جميع الأقسام</option>
-            {departments.map((d) => (
+            {allDepartments.map((d) => (
               <option key={d} value={d}>
                 {d}
               </option>
@@ -331,6 +336,8 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
       <EditSubjectModal
         isOpen={isModalOpen}
         subject={selectedSubjectToEdit}
+        departments={allDepartments}
+        studyLevels={studyLevels}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveModal}
       />

@@ -31,6 +31,10 @@ interface ObserverStatusViewProps {
   signatures: PrintSignatures
   branding: SystemBranding
   currentYear: string
+  jobTitles?: string[]
+  departments?: string[]
+  workDays?: string[]
+  roleQuotas?: Record<string, number>
   onUpdateObserver: (id: string, updates: Partial<Observer>) => void
   onAddObserver: (obs: Omit<Observer, 'id'>) => void
   onImportObservers?: (list: Omit<Observer, 'id'>[]) => void
@@ -43,6 +47,10 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
   signatures,
   branding,
   currentYear,
+  jobTitles,
+  departments,
+  workDays,
+  roleQuotas,
   onUpdateObserver,
   onAddObserver,
   onImportObservers,
@@ -528,6 +536,13 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
         </div>
       </div>
 
+      {/* Official Print Notice / Directives */}
+      {signatures.printNotice && (
+        <div className="mt-2 hidden print:block rounded-lg border border-black/20 bg-gray-50 p-2 text-[10.5px] font-bold text-black text-center leading-relaxed">
+          {signatures.printNotice}
+        </div>
+      )}
+
       {/* Official Signatures Footer (Printable) */}
       <div className="mt-2 hidden print:flex items-center justify-between border-t border-black pt-3 px-4 text-center text-xs font-black text-black">
         <div>
@@ -553,6 +568,10 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
       <EditObserverModal
         isOpen={isModalOpen}
         observer={selectedObserverToEdit}
+        jobTitles={jobTitles}
+        departments={departments}
+        workDays={workDays}
+        roleQuotas={roleQuotas}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveModal}
       />

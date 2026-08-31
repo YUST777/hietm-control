@@ -20,6 +20,9 @@ interface NavbarProps {
   currentYear: string
   setCurrentYear: (y: string) => void
   academicYears: string[]
+  currentSemester?: string
+  setCurrentSemester?: (s: string) => void
+  semesters?: string[]
   totalObservers: number
   totalSubjects: number
   totalCommittees: number
@@ -38,6 +41,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentYear,
   setCurrentYear,
   academicYears,
+  currentSemester,
+  setCurrentSemester,
+  semesters,
   totalObservers,
   totalSubjects,
   totalCommittees,
@@ -209,6 +215,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             ))}
           </select>
         </div>
+
+        {/* Semester Dropdown */}
+        {semesters && semesters.length > 0 && setCurrentSemester && (
+          <div className="hidden md:flex items-center gap-1 rounded-xl border border-[#cfcfcb] bg-[#f7f7f5] px-2 py-1">
+            <select
+              value={currentSemester}
+              onChange={(e) => setCurrentSemester(e.target.value)}
+              className="bg-transparent text-[11px] font-bold text-[#171717] outline-none cursor-pointer"
+            >
+              {semesters.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Print Button */}
         <button

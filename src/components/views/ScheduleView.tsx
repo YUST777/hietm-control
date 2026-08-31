@@ -17,6 +17,8 @@ interface ScheduleViewProps {
   currentYear: string
   signatures: PrintSignatures
   periods?: string[]
+  semesters?: string[]
+  currentSemester?: string
   onSaveSlot: (slot: ScheduleSlot) => void
 }
 
@@ -24,6 +26,13 @@ const DEFAULT_PERIODS = [
   'الفترة الأولى (9:00 - 11:00)',
   'الفترة الثانية (11:30 - 1:30)',
   'الفترة الثالثة (2:00 - 4:00)',
+]
+
+const DEFAULT_SEMESTERS = [
+  'الفصل الدراسي الأول',
+  'الفصل الدراسي الثاني',
+  'الفصل الصيفي (Summer)',
+  'امتحانات التخلفات والتكميلي',
 ]
 
 // Helper to determine day of week in Arabic from date string (YYYY-MM-DD)
@@ -45,12 +54,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   currentYear,
   signatures,
   periods = DEFAULT_PERIODS,
+  semesters = DEFAULT_SEMESTERS,
+  currentSemester = 'الفصل الدراسي الثاني',
   onSaveSlot,
 }) => {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [period, setPeriod] = useState(periods[0] || DEFAULT_PERIODS[0])
   const [startTime, setStartTime] = useState('09:00 AM')
-  const [semester, setSemester] = useState('الفصل الأول')
+  const [semester, setSemester] = useState(currentSemester || semesters[0] || DEFAULT_SEMESTERS[0])
   const [examType, setExamType] = useState('تحريري')
 
   // Reserves list
@@ -241,9 +252,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               onChange={(e) => setSemester(e.target.value)}
               className="bg-transparent text-xs font-bold text-[#171717] outline-none cursor-pointer pr-2 pl-6"
             >
-              <option value="الفصل الأول">الفصل الأول</option>
-              <option value="الفصل الثاني">الفصل الثاني</option>
-              <option value="فصل الصيف">فصل الصيف</option>
+              {semesters.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -591,22 +604,29 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         </div>
       </div>
 
+      {/* Official Print Notice / Directives */}
+      {signatures.printNotice && (
+        <div className="mt-2 hidden print:block rounded-lg border border-black/20 bg-gray-50 p-2 text-[10.5px] font-bold text-black text-center leading-relaxed">
+          {signatures.printNotice}
+        </div>
+      )}
+
       {/* Official Signatures Footer (Printable) */}
       <div className="mt-2 flex items-center justify-between border-t border-[#dededb] pt-2 px-3 text-center text-xs font-black text-[#171717] print-avoid-break">
         <div className="flex flex-col items-center">
-          <p className="text-[11px] font-bold text-[#666]">رئيس لجنة الجداول:</p>
+          <p className="text-[11px] font-bold text-[#666]">{signatures.sigTablesRole || 'رئيس لجنة الجداول'}:</p>
           <p className="mt-0.5 text-xs font-black">{signatures.sigTables || 'د. حياه سامي على احمد'}</p>
           <p className="text-[10px] font-normal text-[#888]">التوقيع: .....................</p>
         </div>
 
         <div className="flex flex-col items-center">
-          <p className="text-[11px] font-bold text-[#666]">مدير النظام ورئيس الكنترول:</p>
+          <p className="text-[11px] font-bold text-[#666]">{signatures.sigSystemRole || 'مدير النظام ورئيس الكنترول'}:</p>
           <p className="mt-0.5 text-xs font-black">{signatures.sigSystem || 'أ.م.د. علي سمير عوض'}</p>
           <p className="text-[10px] font-normal text-[#888]">التوقيع: .....................</p>
         </div>
 
         <div className="flex flex-col items-center">
-          <p className="text-[11px] font-bold text-[#666]">عميد المعهد:</p>
+          <p className="text-[11px] font-bold text-[#666]">{signatures.sigDeanRole || 'عميد المعهد'}:</p>
           <p className="mt-0.5 text-xs font-black">{signatures.sigDean || 'أ.د. رجب عبد العزيز السحيمي'}</p>
           <p className="text-[10px] font-normal text-[#888]">التوقيع: .....................</p>
         </div>

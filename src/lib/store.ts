@@ -19,6 +19,13 @@ import {
   INITIAL_DEPARTMENTS,
   INITIAL_JOB_TITLES,
   INITIAL_CONTROL_STAGES,
+  INITIAL_SEMESTERS,
+  INITIAL_STUDY_LEVELS,
+  INITIAL_BUILDINGS,
+  INITIAL_FLOORS,
+  INITIAL_WORK_DAYS,
+  INITIAL_ROLE_QUOTAS,
+  DEFAULT_PRINT_NOTICE,
 } from './initialData'
 
 const STORAGE_KEYS = {
@@ -36,6 +43,13 @@ const STORAGE_KEYS = {
   DEPARTMENTS: 'hietm_local_departments_v3',
   JOB_TITLES: 'hietm_local_job_titles_v3',
   CONTROL_STAGES: 'hietm_local_control_stages_v3',
+  SEMESTERS: 'hietm_local_semesters_v3',
+  CURRENT_SEMESTER: 'hietm_local_current_semester_v3',
+  STUDY_LEVELS: 'hietm_local_study_levels_v3',
+  BUILDINGS: 'hietm_local_buildings_v3',
+  FLOORS: 'hietm_local_floors_v3',
+  WORK_DAYS: 'hietm_local_work_days_v3',
+  ROLE_QUOTAS: 'hietm_local_role_quotas_v3',
 }
 
 export const DEFAULT_BRANDING: SystemBranding = {
@@ -54,6 +68,7 @@ export const DEFAULT_SIGNATURES: PrintSignatures = {
   sigTablesRole: 'رئيس لجنة الجداول',
   sigSystemRole: 'مدير النظام ورئيس الكنترول',
   sigDeanRole: 'عميد المعهد',
+  printNotice: DEFAULT_PRINT_NOTICE,
 }
 
 function loadLocal<T>(key: string, fallback: T): T {
@@ -80,7 +95,7 @@ function saveLocal<T>(key: string, value: T) {
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline'
 
-// API endpoint URL (works locally, in production, and inside Electron)
+// API endpoint URL
 const API_URL =
   typeof window !== 'undefined' && window.location.origin.includes('http')
     ? `${window.location.origin}/api/sync`
@@ -131,6 +146,29 @@ export function useControlStore() {
     loadLocal(STORAGE_KEYS.CONTROL_STAGES, [...INITIAL_CONTROL_STAGES])
   )
 
+  // Extended Doctor Customization States
+  const [semesters, setSemesters] = useState<string[]>(() =>
+    loadLocal(STORAGE_KEYS.SEMESTERS, [...INITIAL_SEMESTERS])
+  )
+  const [currentSemester, setCurrentSemesterState] = useState<string>(() =>
+    loadLocal(STORAGE_KEYS.CURRENT_SEMESTER, INITIAL_SEMESTERS[1] || 'الفصل الدراسي الثاني')
+  )
+  const [studyLevels, setStudyLevels] = useState<string[]>(() =>
+    loadLocal(STORAGE_KEYS.STUDY_LEVELS, [...INITIAL_STUDY_LEVELS])
+  )
+  const [buildings, setBuildings] = useState<string[]>(() =>
+    loadLocal(STORAGE_KEYS.BUILDINGS, [...INITIAL_BUILDINGS])
+  )
+  const [floors, setFloors] = useState<string[]>(() =>
+    loadLocal(STORAGE_KEYS.FLOORS, [...INITIAL_FLOORS])
+  )
+  const [workDays, setWorkDays] = useState<string[]>(() =>
+    loadLocal(STORAGE_KEYS.WORK_DAYS, [...INITIAL_WORK_DAYS])
+  )
+  const [roleQuotas, setRoleQuotas] = useState<Record<string, number>>(() =>
+    loadLocal(STORAGE_KEYS.ROLE_QUOTAS, { ...INITIAL_ROLE_QUOTAS })
+  )
+
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced')
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null)
 
@@ -158,7 +196,7 @@ export function useControlStore() {
     } catch {}
   }, [branding.primaryColor, branding.appName, branding.instituteName, branding.logoUrl])
 
-  // Refs to avoid unnecessary effect triggers - Mirror 100% of state
+  // Refs to mirror 100% of state
   const stateRef = useRef({
     observers,
     subjects,
@@ -174,6 +212,13 @@ export function useControlStore() {
     departments,
     jobTitles,
     controlStages,
+    semesters,
+    currentSemester,
+    studyLevels,
+    buildings,
+    floors,
+    workDays,
+    roleQuotas,
   })
 
   // Keep stateRef in sync
@@ -193,6 +238,13 @@ export function useControlStore() {
       departments,
       jobTitles,
       controlStages,
+      semesters,
+      currentSemester,
+      studyLevels,
+      buildings,
+      floors,
+      workDays,
+      roleQuotas,
     }
   }, [
     observers,
@@ -209,6 +261,13 @@ export function useControlStore() {
     departments,
     jobTitles,
     controlStages,
+    semesters,
+    currentSemester,
+    studyLevels,
+    buildings,
+    floors,
+    workDays,
+    roleQuotas,
   ])
 
   const isSyncingRef = useRef(false)
@@ -230,6 +289,13 @@ export function useControlStore() {
   useEffect(() => saveLocal(STORAGE_KEYS.DEPARTMENTS, departments), [departments])
   useEffect(() => saveLocal(STORAGE_KEYS.JOB_TITLES, jobTitles), [jobTitles])
   useEffect(() => saveLocal(STORAGE_KEYS.CONTROL_STAGES, controlStages), [controlStages])
+  useEffect(() => saveLocal(STORAGE_KEYS.SEMESTERS, semesters), [semesters])
+  useEffect(() => saveLocal(STORAGE_KEYS.CURRENT_SEMESTER, currentSemester), [currentSemester])
+  useEffect(() => saveLocal(STORAGE_KEYS.STUDY_LEVELS, studyLevels), [studyLevels])
+  useEffect(() => saveLocal(STORAGE_KEYS.BUILDINGS, buildings), [buildings])
+  useEffect(() => saveLocal(STORAGE_KEYS.FLOORS, floors), [floors])
+  useEffect(() => saveLocal(STORAGE_KEYS.WORK_DAYS, workDays), [workDays])
+  useEffect(() => saveLocal(STORAGE_KEYS.ROLE_QUOTAS, roleQuotas), [roleQuotas])
 
   // Push latest stateRef to cloud
   const pushToCloud = useCallback(async (isImmediate = false) => {
@@ -302,49 +368,47 @@ export function useControlStore() {
         if (Array.isArray(d.departments) && d.departments.length > 0) setDepartments(d.departments)
         if (Array.isArray(d.jobTitles) && d.jobTitles.length > 0) setJobTitles(d.jobTitles)
         if (Array.isArray(d.controlStages) && d.controlStages.length > 0) setControlStages(d.controlStages)
-      }
+        if (Array.isArray(d.semesters) && d.semesters.length > 0) setSemesters(d.semesters)
+        if (typeof d.currentSemester === 'string') setCurrentSemesterState(d.currentSemester)
+        if (Array.isArray(d.studyLevels) && d.studyLevels.length > 0) setStudyLevels(d.studyLevels)
+        if (Array.isArray(d.buildings) && d.buildings.length > 0) setBuildings(d.buildings)
+        if (Array.isArray(d.floors) && d.floors.length > 0) setFloors(d.floors)
+        if (Array.isArray(d.workDays) && d.workDays.length > 0) setWorkDays(d.workDays)
+        if (d.roleQuotas && typeof d.roleQuotas === 'object') setRoleQuotas(d.roleQuotas)
 
-      setSyncStatus('synced')
-      setLastSyncTime(new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }))
+        setSyncStatus('synced')
+        setLastSyncTime(new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }))
+      }
     } catch {
       setSyncStatus('offline')
     }
   }, [])
 
-  // Initial pull once on mount + online/offline + beforeunload flush
+  // Mount effect
   useEffect(() => {
     if (!hasMountedRef.current) {
       hasMountedRef.current = true
       pullFromCloud()
     }
+  }, [pullFromCloud])
 
+  // Sync on online event
+  useEffect(() => {
     const handleOnline = () => {
       pushToCloud()
+      pullFromCloud()
     }
-
-    const handleOffline = () => {
-      setSyncStatus('offline')
-    }
-
-    const handleBeforeUnload = () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
-        pushToCloud(true)
-      }
-    }
+    const handleOffline = () => setSyncStatus('offline')
 
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-    window.addEventListener('beforeunload', handleBeforeUnload)
-
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
-      window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [pullFromCloud, pushToCloud])
+  }, [pushToCloud, pullFromCloud])
 
-  // --- CRUD OPERATIONS (INSTANT LOCAL SAVE + AUTO CLOUD SYNC) ---
+  // ================= MUTATIONS ================= //
 
   // 1. Observers
   const updateObserver = (id: string, updates: Partial<Observer>) => {
@@ -354,7 +418,9 @@ export function useControlStore() {
 
   const addObserver = (obs: Omit<Observer, 'id'>) => {
     const newId = String(Date.now())
-    setObservers((prev) => [{ id: newId, ...obs }, ...prev])
+    // Auto-populate target hours if roleQuotas has value
+    const defaultHours = roleQuotas[obs.job] || obs.hours || 16
+    setObservers((prev) => [{ id: newId, hours: defaultHours, ...obs }, ...prev])
     queuePush()
   }
 
@@ -373,8 +439,7 @@ export function useControlStore() {
   }
 
   const resetAllHours = () => {
-    if (!window.confirm('هل تريد تصفير جميع ساعات المراقبة المسجلة لجميع المراقبين؟')) return
-    setObservers((prev) => prev.map((o) => ({ ...o, hours: 0 })))
+    setObservers((prev) => prev.map((o) => ({ ...o, hours: roleQuotas[o.job] || 16 })))
     queuePush()
   }
 
@@ -566,7 +631,7 @@ export function useControlStore() {
     queuePush()
   }
 
-  // 11. 14 Control Stages Customizer
+  // 11. Control Stages Customizer
   const updateControlStageTitle = (index: number, newTitle: string) => {
     setControlStages((prev) => {
       const copy = [...prev]
@@ -576,8 +641,105 @@ export function useControlStore() {
     queuePush()
   }
 
+  const addControlStage = (stage: string) => {
+    setControlStages((prev) => [...prev, stage])
+    queuePush()
+  }
+
+  const deleteControlStage = (index: number) => {
+    if (controlStages.length <= 1) return
+    setControlStages((prev) => prev.filter((_, idx) => idx !== index))
+    queuePush()
+  }
+
   const updateAllControlStages = (newStages: string[]) => {
     setControlStages(newStages)
+    queuePush()
+  }
+
+  // 12. Semesters Management
+  const addSemester = (sem: string) => {
+    if (!semesters.includes(sem)) {
+      setSemesters((prev) => [...prev, sem])
+      queuePush()
+    }
+  }
+
+  const deleteSemester = (sem: string) => {
+    if (semesters.length <= 1) return
+    const next = semesters.filter((s) => s !== sem)
+    setSemesters(next)
+    if (currentSemester === sem) {
+      setCurrentSemesterState(next[0] || '')
+    }
+    queuePush()
+  }
+
+  const updateCurrentSemester = (sem: string) => {
+    setCurrentSemesterState(sem)
+    queuePush()
+  }
+
+  // 13. Study Levels Management
+  const addStudyLevel = (level: string) => {
+    if (!studyLevels.includes(level)) {
+      setStudyLevels((prev) => [...prev, level])
+      queuePush()
+    }
+  }
+
+  const deleteStudyLevel = (level: string) => {
+    if (studyLevels.length <= 1) return
+    setStudyLevels((prev) => prev.filter((l) => l !== level))
+    queuePush()
+  }
+
+  // 14. Buildings & Floors Management
+  const addBuilding = (b: string) => {
+    if (!buildings.includes(b)) {
+      setBuildings((prev) => [...prev, b])
+      queuePush()
+    }
+  }
+
+  const deleteBuilding = (b: string) => {
+    if (buildings.length <= 1) return
+    setBuildings((prev) => prev.filter((item) => item !== b))
+    queuePush()
+  }
+
+  const addFloor = (f: string) => {
+    if (!floors.includes(f)) {
+      setFloors((prev) => [...prev, f])
+      queuePush()
+    }
+  }
+
+  const deleteFloor = (f: string) => {
+    if (floors.length <= 1) return
+    setFloors((prev) => prev.filter((item) => item !== f))
+    queuePush()
+  }
+
+  // 15. Working Days Management
+  const toggleWorkDay = (day: string) => {
+    setWorkDays((prev) => {
+      if (prev.includes(day)) {
+        if (prev.length <= 1) return prev
+        return prev.filter((d) => d !== day)
+      } else {
+        return [...prev, day]
+      }
+    })
+    queuePush()
+  }
+
+  // 16. Target Role Quotas Management
+  const updateRoleQuota = (job: string, hours: number) => {
+    setRoleQuotas((prev) => ({
+      ...prev,
+      [job]: hours,
+    }))
     queuePush()
   }
 
@@ -599,6 +761,13 @@ export function useControlStore() {
       setDepartments([...INITIAL_DEPARTMENTS])
       setJobTitles([...INITIAL_JOB_TITLES])
       setControlStages([...INITIAL_CONTROL_STAGES])
+      setSemesters([...INITIAL_SEMESTERS])
+      setCurrentSemesterState(INITIAL_SEMESTERS[1] || 'الفصل الدراسي الثاني')
+      setStudyLevels([...INITIAL_STUDY_LEVELS])
+      setBuildings([...INITIAL_BUILDINGS])
+      setFloors([...INITIAL_FLOORS])
+      setWorkDays([...INITIAL_WORK_DAYS])
+      setRoleQuotas({ ...INITIAL_ROLE_QUOTAS })
       queuePush()
     }
   }
@@ -621,6 +790,13 @@ export function useControlStore() {
       departments,
       jobTitles,
       controlStages,
+      semesters,
+      currentSemester,
+      studyLevels,
+      buildings,
+      floors,
+      workDays,
+      roleQuotas,
     }
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -651,6 +827,13 @@ export function useControlStore() {
       if (Array.isArray(parsed.departments)) setDepartments(parsed.departments)
       if (Array.isArray(parsed.jobTitles)) setJobTitles(parsed.jobTitles)
       if (Array.isArray(parsed.controlStages)) setControlStages(parsed.controlStages)
+      if (Array.isArray(parsed.semesters)) setSemesters(parsed.semesters)
+      if (typeof parsed.currentSemester === 'string') setCurrentSemesterState(parsed.currentSemester)
+      if (Array.isArray(parsed.studyLevels)) setStudyLevels(parsed.studyLevels)
+      if (Array.isArray(parsed.buildings)) setBuildings(parsed.buildings)
+      if (Array.isArray(parsed.floors)) setFloors(parsed.floors)
+      if (Array.isArray(parsed.workDays)) setWorkDays(parsed.workDays)
+      if (parsed.roleQuotas && typeof parsed.roleQuotas === 'object') setRoleQuotas(parsed.roleQuotas)
 
       queuePush()
       return true
@@ -724,8 +907,34 @@ export function useControlStore() {
     updateJobTitlesList,
 
     controlStages,
+    addControlStage,
+    deleteControlStage,
     updateControlStageTitle,
     updateAllControlStages,
+
+    semesters,
+    addSemester,
+    deleteSemester,
+    currentSemester,
+    setCurrentSemester: updateCurrentSemester,
+
+    studyLevels,
+    addStudyLevel,
+    deleteStudyLevel,
+
+    buildings,
+    addBuilding,
+    deleteBuilding,
+
+    floors,
+    addFloor,
+    deleteFloor,
+
+    workDays,
+    toggleWorkDay,
+
+    roleQuotas,
+    updateRoleQuota,
 
     syncStatus,
     lastSyncTime,

@@ -72,6 +72,7 @@ export interface PrintSignatures {
   sigSystemRole?: string
   sigTablesRole?: string
   sigDeanRole?: string
+  printNotice?: string
 }
 
 export interface SystemBranding {

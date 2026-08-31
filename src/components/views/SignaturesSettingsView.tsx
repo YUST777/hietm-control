@@ -18,6 +18,10 @@ import {
   Clock,
   Briefcase,
   ListOrdered,
+  GraduationCap,
+  DoorOpen,
+  CalendarDays,
+  FileText,
 } from 'lucide-react'
 
 interface SettingsViewProps {
@@ -29,6 +33,13 @@ interface SettingsViewProps {
   departments: string[]
   jobTitles: string[]
   controlStages: string[]
+  semesters?: string[]
+  currentSemester?: string
+  studyLevels?: string[]
+  buildings?: string[]
+  floors?: string[]
+  workDays?: string[]
+  roleQuotas?: Record<string, number>
   onSaveSignatures: (sigs: PrintSignatures) => void
   onSaveBranding: (branding: SystemBranding) => void
   onAddAcademicYear?: (year: string) => void
@@ -41,6 +52,17 @@ interface SettingsViewProps {
   onAddJobTitle?: (job: string) => void
   onDeleteJobTitle?: (job: string) => void
   onUpdateControlStages?: (stages: string[]) => void
+  onAddSemester?: (sem: string) => void
+  onDeleteSemester?: (sem: string) => void
+  onSetCurrentSemester?: (sem: string) => void
+  onAddStudyLevel?: (lvl: string) => void
+  onDeleteStudyLevel?: (lvl: string) => void
+  onAddBuilding?: (b: string) => void
+  onDeleteBuilding?: (b: string) => void
+  onAddFloor?: (f: string) => void
+  onDeleteFloor?: (f: string) => void
+  onToggleWorkDay?: (day: string) => void
+  onUpdateRoleQuota?: (job: string, hours: number) => void
   onExportBackup?: () => void
   onImportBackup?: (jsonStr: string) => boolean
   onResetToDefaults?: () => void
@@ -55,6 +77,8 @@ const COLOR_PRESETS = [
   { name: 'الأزرق الفيروزي (Teal)', hex: '#0d9488' },
 ]
 
+const ALL_WEEK_DAYS = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة']
+
 export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
   signatures,
   branding,
@@ -64,6 +88,13 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
   departments,
   jobTitles,
   controlStages,
+  semesters = ['الفصل الدراسي الأول', 'الفصل الدراسي الثاني', 'الفصل الصيفي (Summer)', 'امتحانات التخلفات والتكميلي'],
+  currentSemester = 'الفصل الدراسي الثاني',
+  studyLevels = ['إعدادي', 'الفرقة الأولى', 'الفرقة الثانية', 'الفرقة الثالثة', 'الفرقة الرابعة', 'دراسات عليا'],
+  buildings = ['مبنى الهندسة الرئيسي (أ)', 'مبنى الورش والمعامل (ب)', 'مبنى المدرجات المركزي (ج)', 'مبنى إدارة المعهد'],
+  floors = ['البدروم', 'الدور الأرضي', 'الدور الأول', 'الدور الثاني', 'الدور الثالث', 'الدور الرابع'],
+  workDays = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'],
+  roleQuotas = {},
   onSaveSignatures,
   onSaveBranding,
   onAddAcademicYear,
@@ -76,13 +107,24 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
   onAddJobTitle,
   onDeleteJobTitle,
   onUpdateControlStages,
+  onAddSemester,
+  onDeleteSemester,
+  onSetCurrentSemester,
+  onAddStudyLevel,
+  onDeleteStudyLevel,
+  onAddBuilding,
+  onDeleteBuilding,
+  onAddFloor,
+  onDeleteFloor,
+  onToggleWorkDay,
+  onUpdateRoleQuota,
   onExportBackup,
   onImportBackup,
   onResetToDefaults,
 }) => {
   // Navigation subtabs inside Settings
   const [activeTab, setActiveTab] = useState<
-    'branding' | 'signatures' | 'periods' | 'departments' | 'stages' | 'years' | 'backup'
+    'branding' | 'signatures' | 'academics' | 'periods' | 'facilities' | 'roles' | 'stages' | 'backup'
   >('branding')
 
   // Signatures State
@@ -92,6 +134,10 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
   const [sigTablesRole, setSigTablesRole] = useState(signatures.sigTablesRole || 'رئيس لجنة الجداول')
   const [sigSystemRole, setSigSystemRole] = useState(signatures.sigSystemRole || 'مدير النظام ورئيس الكنترول')
   const [sigDeanRole, setSigDeanRole] = useState(signatures.sigDeanRole || 'عميد المعهد')
+  const [printNotice, setPrintNotice] = useState(
+    signatures.printNotice ||
+      'تنبيه هام: يُرجى من السادة المراقبين التواجد بمقر اللجنة قبل موعد بدء الامتحان بنصف ساعة على الأقل، واستلام كراسات الإجابة وأوراق الأسئلة وتوزيعها بدقة، وتطبيق قواعد الامتحانات والكنترول، وعدم مغادرة مقر اللجنة إلا بعد تسليم كامل أوراق الإجابة ومحاضر الغياب للكنترول.'
+  )
 
   // Branding State
   const [appName, setAppName] = useState(branding.appName)
@@ -105,9 +151,14 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
 
   // Dynamic Inputs
   const [newYearInput, setNewYearInput] = useState('')
+  const [newSemesterInput, setNewSemesterInput] = useState('')
+  const [newLevelInput, setNewLevelInput] = useState('')
   const [newPeriodInput, setNewPeriodInput] = useState('')
   const [newDeptInput, setNewDeptInput] = useState('')
   const [newJobInput, setNewJobInput] = useState('')
+  const [newBuildingInput, setNewBuildingInput] = useState('')
+  const [newFloorInput, setNewFloorInput] = useState('')
+  const [newStageInput, setNewStageInput] = useState('')
   const [editableStages, setEditableStages] = useState<string[]>(controlStages)
 
   // Handle Logo Upload (Base64)
@@ -155,6 +206,20 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
     }
   }
 
+  const handleAddSemester = () => {
+    if (newSemesterInput.trim() && onAddSemester) {
+      onAddSemester(newSemesterInput.trim())
+      setNewSemesterInput('')
+    }
+  }
+
+  const handleAddLevel = () => {
+    if (newLevelInput.trim() && onAddStudyLevel) {
+      onAddStudyLevel(newLevelInput.trim())
+      setNewLevelInput('')
+    }
+  }
+
   const handleAddPeriod = () => {
     if (newPeriodInput.trim() && onAddPeriod) {
       onAddPeriod(newPeriodInput.trim())
@@ -176,6 +241,36 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
     }
   }
 
+  const handleAddBuilding = () => {
+    if (newBuildingInput.trim() && onAddBuilding) {
+      onAddBuilding(newBuildingInput.trim())
+      setNewBuildingInput('')
+    }
+  }
+
+  const handleAddFloor = () => {
+    if (newFloorInput.trim() && onAddFloor) {
+      onAddFloor(newFloorInput.trim())
+      setNewFloorInput('')
+    }
+  }
+
+  const handleAddStage = () => {
+    if (newStageInput.trim()) {
+      const next = [...editableStages, newStageInput.trim()]
+      setEditableStages(next)
+      setNewStageInput('')
+      if (onUpdateControlStages) onUpdateControlStages(next)
+    }
+  }
+
+  const handleDeleteStage = (index: number) => {
+    if (editableStages.length <= 1) return
+    const next = editableStages.filter((_, idx) => idx !== index)
+    setEditableStages(next)
+    if (onUpdateControlStages) onUpdateControlStages(next)
+  }
+
   const handleStageChange = (index: number, val: string) => {
     const next = [...editableStages]
     next[index] = val
@@ -191,6 +286,7 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
       sigTablesRole,
       sigSystemRole,
       sigDeanRole,
+      printNotice,
     })
     onSaveBranding({
       appName: appName.trim(),
@@ -240,6 +336,19 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
 
           <button
             type="button"
+            onClick={() => setActiveTab('academics')}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition cursor-pointer ${
+              activeTab === 'academics'
+                ? 'bg-[#1f4d78] text-white shadow-xs'
+                : 'text-[#555] hover:bg-[#f0f0ee]'
+            }`}
+          >
+            <GraduationCap className="size-3.5" />
+            <span>الأعوام والفصول والفرق</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('periods')}
             className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition cursor-pointer ${
               activeTab === 'periods'
@@ -248,20 +357,33 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
             }`}
           >
             <Clock className="size-3.5" />
-            <span>فترات الامتحانات</span>
+            <span>فترات الامتحانات وأيام العمل</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab('departments')}
+            onClick={() => setActiveTab('facilities')}
             className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition cursor-pointer ${
-              activeTab === 'departments'
+              activeTab === 'facilities'
+                ? 'bg-[#1f4d78] text-white shadow-xs'
+                : 'text-[#555] hover:bg-[#f0f0ee]'
+            }`}
+          >
+            <Building2 className="size-3.5" />
+            <span>الأقسام والمباني والقاعات</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('roles')}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition cursor-pointer ${
+              activeTab === 'roles'
                 ? 'bg-[#1f4d78] text-white shadow-xs'
                 : 'text-[#555] hover:bg-[#f0f0ee]'
             }`}
           >
             <Briefcase className="size-3.5" />
-            <span>الأقسام والوظائف</span>
+            <span>الوظائف والأنصبة</span>
           </button>
 
           <button
@@ -274,20 +396,7 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
             }`}
           >
             <ListOrdered className="size-3.5" />
-            <span>بنود الكنترول الـ 14</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('years')}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition cursor-pointer ${
-              activeTab === 'years'
-                ? 'bg-[#1f4d78] text-white shadow-xs'
-                : 'text-[#555] hover:bg-[#f0f0ee]'
-            }`}
-          >
-            <Calendar className="size-3.5" />
-            <span>الأعوام الجامعية</span>
+            <span>مراحل وبنود الكنترول</span>
           </button>
 
           <button
@@ -325,7 +434,6 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-bold">
-              {/* Left Column: Names & Badge */}
               <div className="flex flex-col gap-3">
                 <div>
                   <label className="text-[#555] block mb-1">اسم النظام / الوحدة الرئيسية:</label>
@@ -361,9 +469,7 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </div>
 
-              {/* Right Column: Logo & Color Palette */}
               <div className="flex flex-col gap-3">
-                {/* Logo Upload & Preview */}
                 <div>
                   <label className="text-[#555] block mb-1">شعار المعهد (Logo):</label>
                   <div className="flex items-center gap-3">
@@ -406,7 +512,6 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                   </div>
                 </div>
 
-                {/* Color Theme Selector */}
                 <div>
                   <label className="text-[#555] block mb-1.5">لون مظهر النظام الأساسي (Theme Color):</label>
                   <div className="grid grid-cols-3 gap-1.5 mb-2">
@@ -435,7 +540,6 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                     })}
                   </div>
 
-                  {/* Custom Color Input */}
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
@@ -454,55 +558,12 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Live Preview Card */}
-            <div className="mt-4 rounded-xl border border-[#dededb] bg-[#f8fafc] p-3">
-              <p className="text-[11px] font-bold text-[#64748b] mb-2 flex items-center gap-1">
-                <Sparkles className="size-3.5" style={{ color: primaryColor }} />
-                <span>معاينة حية لشريط العنوان:</span>
-              </p>
-              <div className="flex items-center justify-between rounded-xl border border-[#e2e8f0] bg-white p-2.5 shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="grid size-8 place-items-center rounded-lg text-white overflow-hidden shadow-xs"
-                    style={{ backgroundColor: primaryColor }}
-                  >
-                    {logoUrl ? (
-                      <img src={logoUrl} alt="Logo" className="size-full object-contain p-0.5" />
-                    ) : (
-                      <Building2 className="size-4.5" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xs font-black text-[#171717]">{appName || 'اسم النظام'}</h3>
-                      <span
-                        className="rounded px-1.5 py-0.2 text-[9px] font-bold"
-                        style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
-                      >
-                        {badgeText || 'CODE'}
-                      </span>
-                    </div>
-                    <p className="text-[10px] font-semibold text-[#666]">{instituteName || 'اسم المعهد'}</p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="rounded-lg px-3 py-1 text-xs font-bold text-white shadow-xs"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  زر تجريبي
-                </button>
-              </div>
-            </div>
           </div>
         )}
 
         {/* Tab 2: Signatures & Official Print Headers */}
         {activeTab === 'signatures' && (
           <div className="flex flex-col gap-3">
-            {/* Signatures */}
             <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
               <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
                 <div
@@ -622,75 +683,343 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Tab 3: Exam Periods Management */}
-        {activeTab === 'periods' && (
-          <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
-              <div
-                className="grid size-9 place-items-center rounded-xl text-white shadow-xs"
-                style={{ backgroundColor: primaryColor }}
-              >
-                <Clock className="size-4.5" />
-              </div>
-              <div>
-                <h2 className="text-sm font-black text-[#171717]">إدارة فترات ومواعيد الامتحانات</h2>
-                <p className="text-[11px] font-semibold text-[#777]">
-                  إضافة وحذف وتعديل فترات الامتحانات اليومية وتحديد مواعيدها
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 text-xs font-bold">
-              <div className="flex flex-wrap gap-2">
-                {periods.map((p) => (
-                  <div
-                    key={p}
-                    className="flex items-center gap-2 rounded-xl border border-[#cfcfcb] bg-[#fafaf8] px-3 py-1.5 text-xs font-bold text-[#171717]"
-                  >
-                    <span>{p}</span>
-                    {periods.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => onDeletePeriod && onDeletePeriod(p)}
-                        className="rounded-full text-[#aaa] hover:bg-[#fee2e2] hover:text-[#c5221f] p-0.5 transition cursor-pointer"
-                        title="حذف هذه الفترة"
-                      >
-                        <Trash2 className="size-3" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Add New Period Input */}
-              <div className="flex items-center gap-2 mt-2">
-                <input
-                  type="text"
-                  placeholder="مثال: الفترة الرابعة (4:30 - 6:30)"
-                  value={newPeriodInput}
-                  onChange={(e) => setNewPeriodInput(e.target.value)}
-                  className="h-8.5 w-72 rounded-lg border border-[#cfcfcb] px-2.5 text-xs font-bold text-[#171717] outline-none focus:border-[#1f4d78]"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddPeriod}
-                  disabled={!newPeriodInput.trim()}
-                  className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-3.5 py-2 text-xs font-bold text-white disabled:opacity-50 transition cursor-pointer"
+            {/* Official Print Directive / Notice */}
+            <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
+                <div
+                  className="grid size-9 place-items-center rounded-xl text-white shadow-xs"
+                  style={{ backgroundColor: '#0284c7' }}
                 >
-                  <Plus className="size-3.5" />
-                  <span>إضافة فترة جديدة</span>
-                </button>
+                  <FileText className="size-4.5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-[#171717]">ملاحظات وتنبيهات الكشوف المطبوعة (Print Notice)</h2>
+                  <p className="text-[11px] font-semibold text-[#777]">
+                    النص التوجيهي المطبوع أسفل كشوف الحضور والغياب الرسمية للمراقبين
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <textarea
+                  rows={3}
+                  value={printNotice}
+                  onChange={(e) => setPrintNotice(e.target.value)}
+                  placeholder="اكتب التنبيهات والتعليمات الرسمية..."
+                  className="w-full rounded-xl border border-[#cfcfcb] p-2.5 text-xs font-semibold text-[#171717] outline-none focus:border-[#1f4d78]"
+                />
               </div>
             </div>
           </div>
         )}
 
-        {/* Tab 4: Departments & Job Titles */}
-        {activeTab === 'departments' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Tab 3: Academics (Years, Semesters, Study Levels) */}
+        {activeTab === 'academics' && (
+          <div className="flex flex-col gap-4">
+            {/* Academic Years */}
+            <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
+                <div
+                  className="grid size-8 place-items-center rounded-xl text-white"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <Calendar className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-[#171717]">الأعوام الجامعية المعتمدة</h3>
+                  <p className="text-[10.5px] font-semibold text-[#777]">إضافة وحذف وتعيين العام الجامعي النشط</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold">
+                <div className="flex flex-wrap items-center gap-2">
+                  {academicYears.map((y) => (
+                    <div
+                      key={y}
+                      className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 transition ${
+                        y === currentYear
+                          ? 'border-[#1f4d78] bg-[#eef3f8] text-[#1f4d78] ring-1 ring-[#1f4d78]'
+                          : 'border-[#cfcfcb] bg-[#fafaf8] text-[#333]'
+                      }`}
+                    >
+                      <span
+                        onClick={() => onSetCurrentYear && onSetCurrentYear(y)}
+                        className="cursor-pointer font-black"
+                        title="تعيين كعام نشط"
+                      >
+                        {y} {y === currentYear && '(النشط حالياً)'}
+                      </span>
+                      {academicYears.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteAcademicYear && onDeleteAcademicYear(y)}
+                          className="rounded-full text-[#aaa] hover:bg-[#fee2e2] hover:text-[#c5221f] p-0.5 transition cursor-pointer"
+                          title="حذف هذا العام"
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="مثال: 2026 - 2027"
+                    value={newYearInput}
+                    onChange={(e) => setNewYearInput(e.target.value)}
+                    className="h-8 w-36 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddYear}
+                    disabled={!newYearInput.trim()}
+                    className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition cursor-pointer"
+                  >
+                    <Plus className="size-3.5" />
+                    <span>إضافة</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Semesters & Exam Terms */}
+            <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
+                <div
+                  className="grid size-8 place-items-center rounded-xl text-white"
+                  style={{ backgroundColor: '#059669' }}
+                >
+                  <CalendarDays className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-[#171717]">الفصول والأدوار الامتحانية (Semesters)</h3>
+                  <p className="text-[10.5px] font-semibold text-[#777]">إدارة فصول الامتحانات وتحديد الفصل النشط</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold">
+                <div className="flex flex-wrap items-center gap-2">
+                  {semesters.map((s) => (
+                    <div
+                      key={s}
+                      className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 transition ${
+                        s === currentSemester
+                          ? 'border-[#059669] bg-[#ecfdf5] text-[#059669] ring-1 ring-[#059669]'
+                          : 'border-[#cfcfcb] bg-[#fafaf8] text-[#333]'
+                      }`}
+                    >
+                      <span
+                        onClick={() => onSetCurrentSemester && onSetCurrentSemester(s)}
+                        className="cursor-pointer font-black"
+                        title="تعيين كفصل نشط"
+                      >
+                        {s} {s === currentSemester && '(النشط)'}
+                      </span>
+                      {semesters.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteSemester && onDeleteSemester(s)}
+                          className="rounded-full text-[#aaa] hover:bg-[#fee2e2] hover:text-[#c5221f] p-0.5 transition cursor-pointer"
+                          title="حذف هذا الفصل"
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="مثال: دور سبتمبر التكميلي"
+                    value={newSemesterInput}
+                    onChange={(e) => setNewSemesterInput(e.target.value)}
+                    className="h-8 w-44 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddSemester}
+                    disabled={!newSemesterInput.trim()}
+                    className="flex items-center gap-1 rounded-lg bg-[#059669] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition cursor-pointer"
+                  >
+                    <Plus className="size-3.5" />
+                    <span>إضافة</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Study Levels / Stages */}
+            <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
+                <div
+                  className="grid size-8 place-items-center rounded-xl text-white"
+                  style={{ backgroundColor: '#7c3aed' }}
+                >
+                  <GraduationCap className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-[#171717]">الفرق والمستويات الدراسية (Study Levels)</h3>
+                  <p className="text-[10.5px] font-semibold text-[#777]">الفرق الدراسية المتاحة عند تسجيل المقررات وجداول الامتحانات</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold">
+                <div className="flex flex-wrap items-center gap-2">
+                  {studyLevels.map((lvl) => (
+                    <div
+                      key={lvl}
+                      className="flex items-center gap-1.5 rounded-xl border border-[#cfcfcb] bg-[#fafaf8] px-3 py-1.5 text-[#333]"
+                    >
+                      <span className="font-black">{lvl}</span>
+                      {studyLevels.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteStudyLevel && onDeleteStudyLevel(lvl)}
+                          className="rounded-full text-[#aaa] hover:bg-[#fee2e2] hover:text-[#c5221f] p-0.5 transition cursor-pointer"
+                          title="حذف هذه الفرقة"
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="مثال: الفرقة الخامسة"
+                    value={newLevelInput}
+                    onChange={(e) => setNewLevelInput(e.target.value)}
+                    className="h-8 w-36 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddLevel}
+                    disabled={!newLevelInput.trim()}
+                    className="flex items-center gap-1 rounded-lg bg-[#7c3aed] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition cursor-pointer"
+                  >
+                    <Plus className="size-3.5" />
+                    <span>إضافة</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Periods & Working Exam Days */}
+        {activeTab === 'periods' && (
+          <div className="flex flex-col gap-4">
+            {/* Exam Periods */}
+            <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
+                <div
+                  className="grid size-9 place-items-center rounded-xl text-white shadow-xs"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <Clock className="size-4.5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-[#171717]">إدارة فترات ومواعيد الامتحانات</h2>
+                  <p className="text-[11px] font-semibold text-[#777]">
+                    إضافة وحذف وتعديل فترات الامتحانات اليومية وتحديد مواعيدها
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 text-xs font-bold">
+                <div className="flex flex-wrap gap-2">
+                  {periods.map((p) => (
+                    <div
+                      key={p}
+                      className="flex items-center gap-2 rounded-xl border border-[#cfcfcb] bg-[#fafaf8] px-3 py-1.5 text-xs font-bold text-[#171717]"
+                    >
+                      <span>{p}</span>
+                      {periods.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => onDeletePeriod && onDeletePeriod(p)}
+                          className="rounded-full text-[#aaa] hover:bg-[#fee2e2] hover:text-[#c5221f] p-0.5 transition cursor-pointer"
+                          title="حذف هذه الفترة"
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="text"
+                    placeholder="مثال: الفترة الرابعة (4:30 - 6:30)"
+                    value={newPeriodInput}
+                    onChange={(e) => setNewPeriodInput(e.target.value)}
+                    className="h-8.5 w-72 rounded-lg border border-[#cfcfcb] px-2.5 text-xs font-bold text-[#171717] outline-none focus:border-[#1f4d78]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddPeriod}
+                    disabled={!newPeriodInput.trim()}
+                    className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-3.5 py-2 text-xs font-bold text-white disabled:opacity-50 transition cursor-pointer"
+                  >
+                    <Plus className="size-3.5" />
+                    <span>إضافة فترة جديدة</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Working Exam Days Selector */}
+            <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
+                <div
+                  className="grid size-9 place-items-center rounded-xl text-white shadow-xs"
+                  style={{ backgroundColor: '#0284c7' }}
+                >
+                  <CalendarDays className="size-4.5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-[#171717]">أيام العمل وجدول الامتحانات الأسبوعي</h2>
+                  <p className="text-[11px] font-semibold text-[#777]">
+                    تحديد أيام الأسبوع المعتمدة لعقد لجان الامتحانات وتوزيع الملاحظات
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 text-xs font-bold">
+                {ALL_WEEK_DAYS.map((day) => {
+                  const isActive = workDays.includes(day)
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => onToggleWorkDay && onToggleWorkDay(day)}
+                      className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 transition cursor-pointer ${
+                        isActive
+                          ? 'border-[#0284c7] bg-[#f0f9ff] text-[#0284c7] font-black ring-1 ring-[#0284c7]'
+                          : 'border-[#cfcfcb] bg-[#fafaf8] text-[#888]'
+                      }`}
+                    >
+                      <span className={`size-2.5 rounded-full ${isActive ? 'bg-[#0284c7]' : 'bg-[#ccc]'}`} />
+                      <span>{day}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: Facilities (Departments, Buildings, Floors) */}
+        {activeTab === 'facilities' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Departments */}
             <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
               <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
@@ -701,8 +1030,8 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                   <Briefcase className="size-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-black text-[#171717]">الأقسام والشعب العلمية</h3>
-                  <p className="text-[10.5px] font-semibold text-[#777]">إدارة الأقسام المتاحة للمقررات</p>
+                  <h3 className="text-xs font-black text-[#171717]">الأقسام العلمية</h3>
+                  <p className="text-[10.5px] font-semibold text-[#777]">الأقسام والتخصصات</p>
                 </div>
               </div>
 
@@ -731,7 +1060,7 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                 <div className="flex items-center gap-1.5 mt-2">
                   <input
                     type="text"
-                    placeholder="اسم القسم الجديد..."
+                    placeholder="اسم القسم..."
                     value={newDeptInput}
                     onChange={(e) => setNewDeptInput(e.target.value)}
                     className="h-8 w-full rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold"
@@ -748,35 +1077,35 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
 
-            {/* Job Titles */}
+            {/* Buildings */}
             <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
               <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
                 <div
                   className="grid size-8 place-items-center rounded-xl text-white"
-                  style={{ backgroundColor: primaryColor }}
+                  style={{ backgroundColor: '#059669' }}
                 >
-                  <UserCog className="size-4" />
+                  <Building2 className="size-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-black text-[#171717]">الدرجات والفئات الوظيفية</h3>
-                  <p className="text-[10.5px] font-semibold text-[#777]">إدارة المسميات الوظيفية للمراقبين</p>
+                  <h3 className="text-xs font-black text-[#171717]">المباني والمقرات</h3>
+                  <p className="text-[10.5px] font-semibold text-[#777]">مباني اللجان والقاعات</p>
                 </div>
               </div>
 
               <div className="flex flex-col gap-2 text-xs font-bold">
                 <div className="flex flex-col gap-1.5 max-h-56 overflow-auto">
-                  {jobTitles.map((j) => (
+                  {buildings.map((b) => (
                     <div
-                      key={j}
+                      key={b}
                       className="flex items-center justify-between rounded-lg border border-[#cfcfcb] bg-[#fafaf8] px-2.5 py-1.5"
                     >
-                      <span>{j}</span>
-                      {jobTitles.length > 1 && (
+                      <span>{b}</span>
+                      {buildings.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => onDeleteJobTitle && onDeleteJobTitle(j)}
+                          onClick={() => onDeleteBuilding && onDeleteBuilding(b)}
                           className="text-[#aaa] hover:text-[#c5221f] transition cursor-pointer"
-                          title="حذف الوظيفة"
+                          title="حذف المبنى"
                         >
                           <Trash2 className="size-3" />
                         </button>
@@ -788,16 +1117,73 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                 <div className="flex items-center gap-1.5 mt-2">
                   <input
                     type="text"
-                    placeholder="اسم الدرجة الوظيفية..."
-                    value={newJobInput}
-                    onChange={(e) => setNewJobInput(e.target.value)}
+                    placeholder="اسم المبنى..."
+                    value={newBuildingInput}
+                    onChange={(e) => setNewBuildingInput(e.target.value)}
                     className="h-8 w-full rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold"
                   />
                   <button
                     type="button"
-                    onClick={handleAddJob}
-                    disabled={!newJobInput.trim()}
-                    className="rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-bold text-white shrink-0 disabled:opacity-50"
+                    onClick={handleAddBuilding}
+                    disabled={!newBuildingInput.trim()}
+                    className="rounded-lg bg-[#059669] px-3 py-1.5 text-xs font-bold text-white shrink-0 disabled:opacity-50"
+                  >
+                    إضافة
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Floors */}
+            <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
+                <div
+                  className="grid size-8 place-items-center rounded-xl text-white"
+                  style={{ backgroundColor: '#d97706' }}
+                >
+                  <DoorOpen className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-[#171717]">الأدوار والطوابق</h3>
+                  <p className="text-[10.5px] font-semibold text-[#777]">أدوار القاعات واللجان</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 text-xs font-bold">
+                <div className="flex flex-col gap-1.5 max-h-56 overflow-auto">
+                  {floors.map((f) => (
+                    <div
+                      key={f}
+                      className="flex items-center justify-between rounded-lg border border-[#cfcfcb] bg-[#fafaf8] px-2.5 py-1.5"
+                    >
+                      <span>{f}</span>
+                      {floors.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteFloor && onDeleteFloor(f)}
+                          className="text-[#aaa] hover:text-[#c5221f] transition cursor-pointer"
+                          title="حذف الدور"
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5 mt-2">
+                  <input
+                    type="text"
+                    placeholder="اسم الدور..."
+                    value={newFloorInput}
+                    onChange={(e) => setNewFloorInput(e.target.value)}
+                    className="h-8 w-full rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddFloor}
+                    disabled={!newFloorInput.trim()}
+                    className="rounded-lg bg-[#d97706] px-3 py-1.5 text-xs font-bold text-white shrink-0 disabled:opacity-50"
                   >
                     إضافة
                   </button>
@@ -807,21 +1193,140 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
           </div>
         )}
 
-        {/* Tab 5: 14 Control Stages Customizer */}
-        {activeTab === 'stages' && (
+        {/* Tab 6: Roles & Standard Quota Hours */}
+        {activeTab === 'roles' && (
           <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
               <div
                 className="grid size-9 place-items-center rounded-xl text-white shadow-xs"
                 style={{ backgroundColor: primaryColor }}
               >
-                <ListOrdered className="size-4.5" />
+                <Briefcase className="size-4.5" />
               </div>
               <div>
-                <h2 className="text-sm font-black text-[#171717]">تخصيص مسميات مراحل أعمال الكنترول (14 بند)</h2>
+                <h2 className="text-sm font-black text-[#171717]">الدرجات الوظيفية والأنصبة وساعات المراقبة المستهدفة</h2>
                 <p className="text-[11px] font-semibold text-[#777]">
-                  تعديل نصوص وعناوين بنود الكنترول الـ 14 لتطابق اللائحة الداخلية للمعهد بدقة
+                  تحديد المسميات الوظيفية وساعات المراقبة المستهدفة لكل درجة وظيفية
                 </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-bold">
+              <div className="flex flex-col gap-2">
+                <h4 className="font-black text-[#171717]">قائمة الدرجات الوظيفية والأنصبة:</h4>
+                <div className="flex flex-col gap-2 max-h-72 overflow-auto">
+                  {jobTitles.map((j) => {
+                    const targetHours = roleQuotas[j] || 16
+                    return (
+                      <div
+                        key={j}
+                        className="flex items-center justify-between rounded-xl border border-[#cfcfcb] bg-[#fafaf8] p-2.5"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-[#171717]">{j}</span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] text-[#666]">النصاب:</span>
+                            <input
+                              type="number"
+                              min="1"
+                              max="60"
+                              value={targetHours}
+                              onChange={(e) => onUpdateRoleQuota && onUpdateRoleQuota(j, parseInt(e.target.value) || 0)}
+                              className="h-7 w-14 rounded-lg border border-[#cfcfcb] bg-white text-center font-mono font-black text-[#1f4d78]"
+                            />
+                            <span className="text-[11px] text-[#888]">ساعة</span>
+                          </div>
+
+                          {jobTitles.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => onDeleteJobTitle && onDeleteJobTitle(j)}
+                              className="text-[#aaa] hover:text-[#c5221f] transition cursor-pointer p-1"
+                              title="حذف هذه الدرجة"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Add New Job Title */}
+              <div className="flex flex-col justify-between rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-3.5">
+                <div>
+                  <h4 className="font-black text-[#171717] mb-1">إضافة درجة وظيفية جديدة</h4>
+                  <p className="text-[11px] font-semibold text-[#666] mb-3">
+                    يمكنك إضافة مسمى وظيفي جديد مثل (أمين سر لجنة، فني معمل، مشرف أمن)
+                  </p>
+
+                  <input
+                    type="text"
+                    placeholder="اسم الدرجة الوظيفية..."
+                    value={newJobInput}
+                    onChange={(e) => setNewJobInput(e.target.value)}
+                    className="h-8.5 w-full rounded-lg border border-[#cfcfcb] bg-white px-2.5 text-xs font-bold mb-3"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleAddJob}
+                  disabled={!newJobInput.trim()}
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#1f4d78] px-4 py-2 text-xs font-bold text-white disabled:opacity-50 transition cursor-pointer"
+                >
+                  <Plus className="size-4" />
+                  <span>إضافة الدرجة الوظيفية</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 7: Control Stages Customizer */}
+        {activeTab === 'stages' && (
+          <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between border-b border-[#ecece9] pb-3 mb-3">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="grid size-9 place-items-center rounded-xl text-white shadow-xs"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <ListOrdered className="size-4.5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-[#171717]">
+                    تخصيص وإدارة مراحل أعمال الكنترول ({editableStages.length} بنداً)
+                  </h2>
+                  <p className="text-[11px] font-semibold text-[#777]">
+                    إضافة وحذف وتعديل نصوص وعناوين بنود الكنترول لتطابق اللائحة بدقة
+                  </p>
+                </div>
+              </div>
+
+              {/* Add New Control Stage */}
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  placeholder="عنوان بند جديد..."
+                  value={newStageInput}
+                  onChange={(e) => setNewStageInput(e.target.value)}
+                  className="h-8 w-48 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddStage}
+                  disabled={!newStageInput.trim()}
+                  className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition cursor-pointer"
+                >
+                  <Plus className="size-3.5" />
+                  <span>إضافة بند</span>
+                </button>
               </div>
             </div>
 
@@ -837,87 +1342,23 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                     onChange={(e) => handleStageChange(idx, e.target.value)}
                     className="h-7 w-full rounded border border-[#cfcfcb] bg-white px-2 text-xs font-bold outline-none focus:border-[#1f4d78]"
                   />
+                  {editableStages.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteStage(idx)}
+                      className="text-[#aaa] hover:text-[#c5221f] transition p-1 cursor-pointer"
+                      title="حذف هذا البند"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Tab 6: Academic Years */}
-        {activeTab === 'years' && (
-          <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
-              <div
-                className="grid size-9 place-items-center rounded-xl text-white shadow-xs"
-                style={{ backgroundColor: primaryColor }}
-              >
-                <Calendar className="size-4.5" />
-              </div>
-              <div>
-                <h2 className="text-sm font-black text-[#171717]">إدارة الأعوام الجامعية المعتمدة</h2>
-                <p className="text-[11px] font-semibold text-[#777]">
-                  إضافة وحذف وتعيين العام الجامعي النشط حالياً في النظام
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold">
-              {/* List of Years */}
-              <div className="flex flex-wrap items-center gap-2">
-                {academicYears.map((y) => (
-                  <div
-                    key={y}
-                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 transition ${
-                      y === currentYear
-                        ? 'border-[#1f4d78] bg-[#eef3f8] text-[#1f4d78] ring-1 ring-[#1f4d78]'
-                        : 'border-[#cfcfcb] bg-[#fafaf8] text-[#333]'
-                    }`}
-                  >
-                    <span
-                      onClick={() => onSetCurrentYear && onSetCurrentYear(y)}
-                      className="cursor-pointer font-black"
-                      title="تعيين كعام نشط"
-                    >
-                      {y} {y === currentYear && '(النشط حالياً)'}
-                    </span>
-                    {academicYears.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => onDeleteAcademicYear && onDeleteAcademicYear(y)}
-                        className="rounded-full text-[#aaa] hover:bg-[#fee2e2] hover:text-[#c5221f] p-0.5 transition cursor-pointer"
-                        title="حذف هذا العام"
-                      >
-                        <Trash2 className="size-3" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Add New Academic Year */}
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="text"
-                  placeholder="مثال: 2026 - 2027"
-                  value={newYearInput}
-                  onChange={(e) => setNewYearInput(e.target.value)}
-                  className="h-8 w-36 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold outline-none focus:border-[#1f4d78]"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddYear}
-                  disabled={!newYearInput.trim()}
-                  className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition cursor-pointer"
-                >
-                  <Plus className="size-3.5" />
-                  <span>إضافة عام</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 7: Backup & Data Recovery */}
+        {/* Tab 8: Backup & Data Recovery */}
         {activeTab === 'backup' && (
           <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
@@ -937,7 +1378,6 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
 
             <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold">
               <div className="flex flex-wrap items-center gap-2.5">
-                {/* Export Backup */}
                 {onExportBackup && (
                   <button
                     type="button"
@@ -949,7 +1389,6 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                   </button>
                 )}
 
-                {/* Import Backup */}
                 {onImportBackup && (
                   <label className="flex items-center gap-1.5 rounded-xl border border-[#cfcfcb] bg-[#fafaf8] px-3.5 py-2 text-xs font-bold text-[#171717] hover:bg-[#eaeae7] transition cursor-pointer">
                     <FileUp className="size-4 text-[#059669]" />
@@ -964,7 +1403,6 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                 )}
               </div>
 
-              {/* Reset to Factory Defaults */}
               {onResetToDefaults && (
                 <button
                   type="button"

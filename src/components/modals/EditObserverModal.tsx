@@ -5,23 +5,27 @@ import { UserCheck, X, Check, Clock, Calendar, Briefcase, Building } from 'lucid
 interface EditObserverModalProps {
   isOpen: boolean
   observer: Observer | null // null = create new
+  jobTitles?: string[]
+  departments?: string[]
+  workDays?: string[]
+  roleQuotas?: Record<string, number>
   onClose: () => void
   onSave: (obsData: Omit<Observer, 'id'>, id?: string) => void
 }
 
-const JOB_OPTIONS = [
+const DEFAULT_JOBS = [
   'عضو هيئة تدريس',
-  'أ.د. (عضو هيئة تدريس)',
-  'أ.م.د. (عضو هيئة تدريس)',
-  'د. (عضو هيئة تدريس)',
-  'هيئة معاونة (مدرس مساعد)',
-  'م.م. (هيئة معاونة)',
-  'هيئة معاونة (معيد)',
-  'م. (هيئة معاونة)',
-  'إداري / موظف',
+  'أستاذ دكتور',
+  'أستاذ مساعد',
+  'مدرس',
+  'مدرس مساعد',
+  'معيد',
+  'جهاز إداري',
+  'فني معمل',
+  'أمين سر لجنة',
 ]
 
-const DEPARTMENTS = [
+const DEFAULT_DEPTS = [
   'قسم العلوم الأساسية',
   'قسم الهندسة المعمارية',
   'قسم الهندسة المدنية',
@@ -29,17 +33,21 @@ const DEPARTMENTS = [
   'إدارة الكنترول وشؤون الطلاب',
 ]
 
-const ALL_DAYS = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس']
+const DEFAULT_DAYS = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس']
 
 export const EditObserverModal: React.FC<EditObserverModalProps> = ({
   isOpen,
   observer,
+  jobTitles = DEFAULT_JOBS,
+  departments = DEFAULT_DEPTS,
+  workDays = DEFAULT_DAYS,
+  roleQuotas = {},
   onClose,
   onSave,
 }) => {
   const [name, setName] = useState('')
-  const [job, setJob] = useState(JOB_OPTIONS[0])
-  const [specialization, setSpecialization] = useState(DEPARTMENTS[0])
+  const [job, setJob] = useState(jobTitles[0] || DEFAULT_JOBS[0])
+  const [specialization, setSpecialization] = useState(departments[0] || DEFAULT_DEPTS[0])
   const [selectedDays, setSelectedDays] = useState<string[]>([])
   const [hours, setHours] = useState<number>(0)
   const [error, setError] = useState('')
@@ -48,25 +56,35 @@ export const EditObserverModal: React.FC<EditObserverModalProps> = ({
     if (isOpen) {
       if (observer) {
         setName(observer.name)
-        setJob(observer.job || JOB_OPTIONS[0])
-        setSpecialization(observer.specialization || DEPARTMENTS[0])
+        setJob(observer.job || jobTitles[0] || DEFAULT_JOBS[0])
+        setSpecialization(observer.specialization || departments[0] || DEFAULT_DEPTS[0])
         const daysArray = observer.days
           ? observer.days.split(',').map((d) => d.trim()).filter(Boolean)
           : []
         setSelectedDays(daysArray)
         setHours(observer.hours || 0)
       } else {
+        const initialJob = jobTitles[0] || DEFAULT_JOBS[0]
+        const defaultHours = roleQuotas[initialJob] || 16
         setName('')
-        setJob(JOB_OPTIONS[0])
-        setSpecialization(DEPARTMENTS[0])
-        setSelectedDays([...ALL_DAYS])
-        setHours(0)
+        setJob(initialJob)
+        setSpecialization(departments[0] || DEFAULT_DEPTS[0])
+        setSelectedDays([...workDays])
+        setHours(defaultHours)
       }
       setError('')
     }
-  }, [isOpen, observer])
+  }, [isOpen, observer, jobTitles, departments, workDays, roleQuotas])
 
   if (!isOpen) return null
+
+  const handleJobChange = (newJob: string) => {
+    setJob(newJob)
+    if (!observer) {
+      const quota = roleQuotas[newJob] || 16
+      setHours(quota)
+    }
+  }
 
   const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
@@ -74,7 +92,7 @@ export const EditObserverModal: React.FC<EditObserverModalProps> = ({
     )
   }
 
-  const selectAllDays = () => setSelectedDays([...ALL_DAYS])
+  const selectAllDays = () => setSelectedDays([...workDays])
   const clearAllDays = () => setSelectedDays([])
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -108,59 +126,59 @@ export const EditObserverModal: React.FC<EditObserverModalProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-black text-[#171717]">
-                {observer ? 'تعديل بيانات عضو المراقبة' : 'إضافة عضو مراقبة جديد'}
+                {observer ? 'تعديل بيانات المراقب' : 'إضافة مراقب جديد إلى الكادر'}
               </h3>
               <p className="text-[11px] font-semibold text-[#777]">
-                {observer ? `تعديل السجل الخاص بـ: ${observer.name}` : 'إدخال عضو جديد إلى قاعدة البيانات'}
+                {observer ? `تعديل السجل الخاص بـ: ${observer.name}` : 'إدخال عضو هيئة تدريس أو هيئة معاونة أو جهاز إداري'}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-[#888] hover:bg-[#f0f0ee] transition"
+            className="rounded-lg p-1.5 text-[#888] hover:bg-[#f0f0ee] transition cursor-pointer"
           >
             <X className="size-4" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 text-xs font-bold">
+        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3.5 text-xs font-bold">
           {error && (
-            <div className="rounded-lg border border-[#fecaca] bg-[#fef2f2] p-2 text-xs font-bold text-[#b91c1c]">
+            <div className="rounded-lg bg-[#fce8e6] p-2 text-center text-xs font-bold text-[#c5221f]">
               {error}
             </div>
           )}
 
-          {/* Name */}
+          {/* Full Name */}
           <div>
-            <label className="text-[#555] block mb-1">الاسم الكامل:</label>
+            <label className="text-[#555] block mb-1">الاسم بالكامل:</label>
             <input
               type="text"
-              placeholder="مثال: د. أحمد محمد علي"
+              placeholder="مثال: د. جرجس سيدهم أو م. غدير طارق"
               value={name}
               onChange={(e) => {
                 setName(e.target.value)
                 if (error) setError('')
               }}
               autoFocus
-              className="h-8.5 w-full rounded-lg border border-[#cfcfcb] px-2.5 text-xs font-bold text-[#171717] outline-none focus:border-[#1f4d78] focus:ring-1 focus:ring-[#1f4d78]"
+              className="h-8.5 w-full rounded-lg border border-[#cfcfcb] px-2.5 text-xs font-bold text-[#171717] outline-none focus:border-[#1f4d78]"
             />
           </div>
 
-          {/* Job & Department */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {/* Job Title & Department */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="flex items-center gap-1 text-[#555] mb-1">
                 <Briefcase className="size-3 text-[#1f4d78]" />
-                <span>المسمى الوظيفي:</span>
+                <span>الدرجة الوظيفية:</span>
               </label>
               <select
                 value={job}
-                onChange={(e) => setJob(e.target.value)}
+                onChange={(e) => handleJobChange(e.target.value)}
                 className="h-8.5 w-full rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#171717] outline-none focus:border-[#1f4d78]"
               >
-                {JOB_OPTIONS.map((j) => (
+                {jobTitles.map((j) => (
                   <option key={j} value={j}>
                     {j}
                   </option>
@@ -178,7 +196,7 @@ export const EditObserverModal: React.FC<EditObserverModalProps> = ({
                 onChange={(e) => setSpecialization(e.target.value)}
                 className="h-8.5 w-full rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#171717] outline-none focus:border-[#1f4d78]"
               >
-                {DEPARTMENTS.map((d) => (
+                {departments.map((d) => (
                   <option key={d} value={d}>
                     {d}
                   </option>
@@ -187,26 +205,45 @@ export const EditObserverModal: React.FC<EditObserverModalProps> = ({
             </div>
           </div>
 
-          {/* Working Days Chips */}
+          {/* Target Hours */}
+          <div>
+            <label className="flex items-center gap-1 text-[#555] mb-1">
+              <Clock className="size-3 text-[#1f4d78]" />
+              <span>نصاب ساعات المراقبة المستهدفة (Target Hours):</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={hours}
+                onChange={(e) => setHours(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                className="h-8.5 w-24 rounded-lg border border-[#cfcfcb] px-2.5 text-center text-xs font-black text-[#1f4d78] outline-none focus:border-[#1f4d78]"
+              />
+              <span className="text-xs font-semibold text-[#777]">ساعة مراقبة خلال دور الامتحانات</span>
+            </div>
+          </div>
+
+          {/* Days Available */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="flex items-center gap-1 text-[#555]">
                 <Calendar className="size-3 text-[#1f4d78]" />
-                <span>أيام التفرغ والحضور الأسبوعية:</span>
+                <span>أيام التواجد والمراقبة المتاحة:</span>
               </label>
-              <div className="flex items-center gap-2 text-[10px]">
+              <div className="flex items-center gap-2 text-[10.5px]">
                 <button
                   type="button"
                   onClick={selectAllDays}
-                  className="text-[#1f4d78] hover:underline"
+                  className="text-[#1f4d78] hover:underline cursor-pointer"
                 >
                   تحديد الكل
                 </button>
-                <span className="text-[#ccc]">•</span>
+                <span className="text-[#ccc]">|</span>
                 <button
                   type="button"
                   onClick={clearAllDays}
-                  className="text-[#888] hover:underline"
+                  className="text-[#c5221f] hover:underline cursor-pointer"
                 >
                   إلغاء الكل
                 </button>
@@ -214,20 +251,24 @@ export const EditObserverModal: React.FC<EditObserverModalProps> = ({
             </div>
 
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-              {ALL_DAYS.map((day) => {
+              {workDays.map((day) => {
                 const isSelected = selectedDays.includes(day)
                 return (
                   <button
                     key={day}
                     type="button"
                     onClick={() => toggleDay(day)}
-                    className={`flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-bold transition cursor-pointer border ${
+                    className={`flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-bold transition border cursor-pointer ${
                       isSelected
-                        ? 'border-[#1f4d78] bg-[#1f4d78] text-white shadow-xs'
-                        : 'border-[#e5e5e3] bg-[#f7f7f5] text-[#666] hover:bg-[#eaeae7]'
+                        ? 'border-[#1f4d78] bg-[#eef3f8] text-[#1f4d78]'
+                        : 'border-[#e5e5e3] bg-[#f7f7f5] text-[#888] hover:bg-[#eaeae7]'
                     }`}
                   >
-                    {isSelected && <Check className="size-3" />}
+                    <span
+                      className={`size-2 rounded-full ${
+                        isSelected ? 'bg-[#1f4d78]' : 'bg-[#ccc]'
+                      }`}
+                    />
                     <span>{day}</span>
                   </button>
                 )
@@ -235,50 +276,18 @@ export const EditObserverModal: React.FC<EditObserverModalProps> = ({
             </div>
           </div>
 
-          {/* Hours Stepper */}
-          <div>
-            <label className="flex items-center gap-1 text-[#555] mb-1">
-              <Clock className="size-3 text-[#1f4d78]" />
-              <span>إجمالي ساعات المراقبة المسجلة:</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setHours((prev) => Math.max(0, prev - 1))}
-                className="grid size-8 place-items-center rounded-lg border border-[#cfcfcb] bg-[#f7f7f5] text-sm font-black text-[#444] hover:bg-[#eaeae7] transition"
-              >
-                -
-              </button>
-              <input
-                type="number"
-                min={0}
-                value={hours}
-                onChange={(e) => setHours(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="h-8 w-20 rounded-lg border border-[#cfcfcb] text-center text-sm font-black text-[#1f4d78] outline-none focus:border-[#1f4d78]"
-              />
-              <button
-                type="button"
-                onClick={() => setHours((prev) => prev + 1)}
-                className="grid size-8 place-items-center rounded-lg border border-[#cfcfcb] bg-[#f7f7f5] text-sm font-black text-[#444] hover:bg-[#eaeae7] transition"
-              >
-                +
-              </button>
-              <span className="text-[11px] font-semibold text-[#777]">ساعة معتمدة</span>
-            </div>
-          </div>
-
-          {/* Footer Buttons */}
-          <div className="mt-3 flex items-center justify-end gap-2 border-t border-[#ecece9] pt-3">
+          {/* Action Buttons */}
+          <div className="mt-2 flex items-center justify-end gap-2 border-t border-[#ecece9] pt-3">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-[#cfcfcb] px-3.5 py-1.5 text-xs font-bold text-[#555] hover:bg-[#f0f0ee] transition"
+              className="rounded-lg border border-[#cfcfcb] px-3.5 py-1.5 text-xs font-bold text-[#666] hover:bg-[#f0f0ee] transition cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#163756] shadow-sm transition"
+              className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#183d5f] transition cursor-pointer"
             >
               <Check className="size-3.5" />
               <span>{observer ? 'حفظ التعديلات' : 'إضافة المراقب'}</span>

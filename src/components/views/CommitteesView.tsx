@@ -6,6 +6,7 @@ import { exportCommitteesCSV, parseCommitteesCSV } from '../../lib/excelUtils'
 
 interface CommitteesViewProps {
   committees: Committee[]
+  floors?: string[]
   onAddCommittee: (c: Omit<Committee, 'id'>) => void
   onUpdateCommittee: (id: string, updates: Partial<Committee>) => void
   onDeleteCommittee: (id: string) => void
@@ -14,6 +15,7 @@ interface CommitteesViewProps {
 
 export const CommitteesView: React.FC<CommitteesViewProps> = ({
   committees,
+  floors,
   onAddCommittee,
   onUpdateCommittee,
   onDeleteCommittee,
@@ -173,6 +175,7 @@ export const CommitteesView: React.FC<CommitteesViewProps> = ({
       <EditCommitteeModal
         isOpen={isModalOpen}
         committee={selectedCommitteeToEdit}
+        floors={floors}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveModal}
       />

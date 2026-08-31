@@ -6,6 +6,8 @@ import { exportSubjectsCSV, parseSubjectsCSV } from '../../lib/excelUtils'
 
 interface SubjectsViewProps {
   subjects: Subject[]
+  departments?: string[]
+  studyLevels?: string[]
   onAddSubject: (s: Omit<Subject, 'id'>) => void
   onUpdateSubject: (id: string, updates: Partial<Subject>) => void
   onDeleteSubject: (id: string) => void
@@ -14,6 +16,8 @@ interface SubjectsViewProps {
 
 export const SubjectsView: React.FC<SubjectsViewProps> = ({
   subjects,
+  departments: customDepartments,
+  studyLevels: customStudyLevels,
   onAddSubject,
   onUpdateSubject,
   onDeleteSubject,
@@ -260,6 +264,8 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
       <EditSubjectModal
         isOpen={isModalOpen}
         subject={selectedSubjectToEdit}
+        departments={customDepartments}
+        studyLevels={customStudyLevels}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveModal}
       />

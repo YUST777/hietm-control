@@ -544,6 +544,13 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
         </div>
       </div>
 
+      {/* Official Print Notice / Directives */}
+      {signatures.printNotice && (
+        <div className="mt-2 rounded-lg border border-[#dededb] bg-[#fafaf8] p-2 text-[10.5px] font-bold text-[#444] text-center leading-relaxed">
+          {signatures.printNotice}
+        </div>
+      )}
+
       {/* Official Signatures Footer (Printable) */}
       <div className="mt-2 flex items-center justify-between border-t border-[#dededb] pt-2 px-3 text-center text-xs font-black text-[#171717]">
         <div className="flex flex-col items-center">
@@ -553,13 +560,13 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
         </div>
 
         <div className="flex flex-col items-center">
-          <p className="text-[11px] font-bold text-[#666]">مدير النظام ورئيس الكنترول:</p>
+          <p className="text-[11px] font-bold text-[#666]">{signatures.sigSystemRole || 'مدير النظام ورئيس الكنترول'}:</p>
           <p className="mt-0.5 text-xs font-black">{signatures.sigSystem || 'أ.م.د. علي سمير عوض'}</p>
           <p className="text-[10px] font-normal text-[#888]">التوقيع: .....................</p>
         </div>
 
         <div className="flex flex-col items-center">
-          <p className="text-[11px] font-bold text-[#666]">عميد المعهد:</p>
+          <p className="text-[11px] font-bold text-[#666]">{signatures.sigDeanRole || 'عميد المعهد'}:</p>
           <p className="mt-0.5 text-xs font-black">{signatures.sigDean || 'أ.د. رجب عبد العزيز السحيمي'}</p>
           <p className="text-[10px] font-normal text-[#888]">التوقيع: .....................</p>
         </div>

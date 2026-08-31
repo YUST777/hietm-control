@@ -5,29 +5,33 @@ import { BookOpen, X, Check, Building, GraduationCap } from 'lucide-react'
 interface EditSubjectModalProps {
   isOpen: boolean
   subject: Subject | null // null = create new
+  departments?: string[]
+  studyLevels?: string[]
   onClose: () => void
   onSave: (subjData: Omit<Subject, 'id'>, id?: string) => void
 }
 
-const DEPARTMENTS = [
+const DEFAULT_DEPTS = [
   'قسم العلوم الأساسية',
   'قسم الهندسة المعمارية',
   'قسم الهندسة المدنية',
   'قسم الهندسة الكهربية',
 ]
 
-const ACADEMIC_YEARS = ['إعدادي', 'الأولى', 'الثانية', 'الثالثة', 'الرابعة']
+const DEFAULT_LEVELS = ['إعدادي', 'الفرقة الأولى', 'الفرقة الثانية', 'الفرقة الثالثة', 'الفرقة الرابعة']
 
 export const EditSubjectModal: React.FC<EditSubjectModalProps> = ({
   isOpen,
   subject,
+  departments = DEFAULT_DEPTS,
+  studyLevels = DEFAULT_LEVELS,
   onClose,
   onSave,
 }) => {
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
-  const [dept, setDept] = useState(DEPARTMENTS[0])
-  const [year, setYear] = useState(ACADEMIC_YEARS[0])
+  const [dept, setDept] = useState(departments[0] || DEFAULT_DEPTS[0])
+  const [year, setYear] = useState(studyLevels[0] || DEFAULT_LEVELS[0])
   const [semester, setSemester] = useState('اول')
   const [error, setError] = useState('')
 
@@ -36,19 +40,19 @@ export const EditSubjectModal: React.FC<EditSubjectModalProps> = ({
       if (subject) {
         setCode(subject.code)
         setName(subject.name)
-        setDept(subject.dept || DEPARTMENTS[0])
-        setYear(subject.year || ACADEMIC_YEARS[0])
+        setDept(subject.dept || departments[0] || DEFAULT_DEPTS[0])
+        setYear(subject.year || studyLevels[0] || DEFAULT_LEVELS[0])
         setSemester(subject.semester || 'اول')
       } else {
         setCode('')
         setName('')
-        setDept(DEPARTMENTS[0])
-        setYear(ACADEMIC_YEARS[0])
+        setDept(departments[0] || DEFAULT_DEPTS[0])
+        setYear(studyLevels[0] || DEFAULT_LEVELS[0])
         setSemester('اول')
       }
       setError('')
     }
-  }, [isOpen, subject])
+  }, [isOpen, subject, departments, studyLevels])
 
   if (!isOpen) return null
 
@@ -94,16 +98,16 @@ export const EditSubjectModal: React.FC<EditSubjectModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-[#888] hover:bg-[#f0f0ee] transition"
+            className="rounded-lg p-1.5 text-[#888] hover:bg-[#f0f0ee] transition cursor-pointer"
           >
             <X className="size-4" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 text-xs font-bold">
+        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3.5 text-xs font-bold">
           {error && (
-            <div className="rounded-lg border border-[#fecaca] bg-[#fef2f2] p-2 text-xs font-bold text-[#b91c1c]">
+            <div className="rounded-lg bg-[#fce8e6] p-2 text-center text-xs font-bold text-[#c5221f]">
               {error}
             </div>
           )}
@@ -114,7 +118,7 @@ export const EditSubjectModal: React.FC<EditSubjectModalProps> = ({
               <label className="text-[#555] block mb-1">كود المقرر:</label>
               <input
                 type="text"
-                placeholder="مثال: BS 011"
+                placeholder="مثال: BAS01"
                 value={code}
                 onChange={(e) => {
                   setCode(e.target.value)
@@ -151,7 +155,7 @@ export const EditSubjectModal: React.FC<EditSubjectModalProps> = ({
               onChange={(e) => setDept(e.target.value)}
               className="h-8.5 w-full rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#171717] outline-none focus:border-[#1f4d78]"
             >
-              {DEPARTMENTS.map((d) => (
+              {departments.map((d) => (
                 <option key={d} value={d}>
                   {d}
                 </option>
@@ -159,21 +163,21 @@ export const EditSubjectModal: React.FC<EditSubjectModalProps> = ({
             </select>
           </div>
 
-          {/* Academic Year Pills */}
+          {/* Academic Year / Study Level Pills */}
           <div>
             <label className="flex items-center gap-1 text-[#555] mb-1.5">
               <GraduationCap className="size-3 text-[#1f4d78]" />
-              <span>الفرقة الدراسية:</span>
+              <span>الفرقة / المستوى الدراسي:</span>
             </label>
-            <div className="grid grid-cols-5 gap-1">
-              {ACADEMIC_YEARS.map((y) => {
+            <div className="flex flex-wrap gap-1">
+              {studyLevels.map((y) => {
                 const isSelected = year === y
                 return (
                   <button
                     key={y}
                     type="button"
                     onClick={() => setYear(y)}
-                    className={`rounded-lg py-1.5 text-xs font-bold transition border ${
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition border cursor-pointer ${
                       isSelected
                         ? 'border-[#1f4d78] bg-[#1f4d78] text-white shadow-xs'
                         : 'border-[#e5e5e3] bg-[#f7f7f5] text-[#666] hover:bg-[#eaeae7]'
@@ -193,40 +197,41 @@ export const EditSubjectModal: React.FC<EditSubjectModalProps> = ({
               <button
                 type="button"
                 onClick={() => setSemester('اول')}
-                className={`rounded-lg py-1.5 text-xs font-bold transition border ${
+                className={`rounded-lg py-1.5 text-xs font-bold transition border cursor-pointer ${
                   semester === 'اول'
                     ? 'border-[#1f4d78] bg-[#eef3f8] text-[#1f4d78] font-black'
                     : 'border-[#e5e5e3] bg-[#f7f7f5] text-[#666] hover:bg-[#eaeae7]'
                 }`}
               >
-                الفصل الأول (خريف)
+                الفصل الدراسي الأول
               </button>
+
               <button
                 type="button"
-                onClick={() => setSemester('ثاني')}
-                className={`rounded-lg py-1.5 text-xs font-bold transition border ${
-                  semester === 'ثاني'
+                onClick={() => setSemester('ثان')}
+                className={`rounded-lg py-1.5 text-xs font-bold transition border cursor-pointer ${
+                  semester === 'ثان'
                     ? 'border-[#1f4d78] bg-[#eef3f8] text-[#1f4d78] font-black'
                     : 'border-[#e5e5e3] bg-[#f7f7f5] text-[#666] hover:bg-[#eaeae7]'
                 }`}
               >
-                الفصل الثاني (ربيع)
+                الفصل الدراسي الثاني
               </button>
             </div>
           </div>
 
-          {/* Footer Buttons */}
-          <div className="mt-3 flex items-center justify-end gap-2 border-t border-[#ecece9] pt-3">
+          {/* Action Buttons */}
+          <div className="mt-2 flex items-center justify-end gap-2 border-t border-[#ecece9] pt-3">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-[#cfcfcb] px-3.5 py-1.5 text-xs font-bold text-[#555] hover:bg-[#f0f0ee] transition"
+              className="rounded-lg border border-[#cfcfcb] px-3.5 py-1.5 text-xs font-bold text-[#666] hover:bg-[#f0f0ee] transition cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#163756] shadow-sm transition"
+              className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#183d5f] transition cursor-pointer"
             >
               <Check className="size-3.5" />
               <span>{subject ? 'حفظ التعديلات' : 'إضافة المقرر'}</span>

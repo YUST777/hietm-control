@@ -82,6 +82,30 @@ export function App() {
     controlStages,
     updateAllControlStages,
 
+    semesters,
+    addSemester,
+    deleteSemester,
+    currentSemester,
+    setCurrentSemester,
+
+    studyLevels,
+    addStudyLevel,
+    deleteStudyLevel,
+
+    buildings,
+    addBuilding,
+    deleteBuilding,
+
+    floors,
+    addFloor,
+    deleteFloor,
+
+    workDays,
+    toggleWorkDay,
+
+    roleQuotas,
+    updateRoleQuota,
+
     syncStatus,
     lastSyncTime,
     manualSync,
@@ -193,6 +217,12 @@ export function App() {
           showToast(`تم تغيير العام الجامعي النشط إلى: ${year}`)
         }}
         academicYears={academicYears}
+        currentSemester={currentSemester}
+        setCurrentSemester={(sem: string) => {
+          setCurrentSemester(sem)
+          showToast(`تم تغيير الفصل الدراسي النشط إلى: ${sem}`)
+        }}
+        semesters={semesters}
         totalObservers={observers.length}
         totalSubjects={subjects.length}
         totalCommittees={committees.length}
@@ -241,6 +271,8 @@ export function App() {
                 currentYear={currentYear}
                 signatures={signatures}
                 periods={periods}
+                semesters={semesters}
+                currentSemester={currentSemester}
                 onSaveSlot={handleSaveSlot}
               />
             )}
@@ -248,6 +280,10 @@ export function App() {
             {activeProctoringTab === 'days' && (
               <ObserverDaysView
                 observers={observers}
+                workDays={workDays}
+                jobTitles={jobTitles}
+                departments={departments}
+                roleQuotas={roleQuotas}
                 onUpdateObserver={handleUpdateObserver}
                 onAddObserver={handleAddObserver}
                 onUpdateObserverDays={(id, days) => {
@@ -260,6 +296,7 @@ export function App() {
             {activeProctoringTab === 'committees' && (
               <CommitteesView
                 committees={committees}
+                floors={floors}
                 onAddCommittee={handleAddCommittee}
                 onUpdateCommittee={handleUpdateCommittee}
                 onDeleteCommittee={handleDeleteCommittee}
@@ -291,6 +328,10 @@ export function App() {
                 signatures={signatures}
                 branding={branding}
                 currentYear={currentYear}
+                jobTitles={jobTitles}
+                departments={departments}
+                workDays={workDays}
+                roleQuotas={roleQuotas}
                 onUpdateObserver={handleUpdateObserver}
                 onAddObserver={handleAddObserver}
                 onImportObservers={(list) => {
@@ -305,6 +346,8 @@ export function App() {
         {activeMainTab === 'subjects' && (
           <SubjectsView
             subjects={subjects}
+            departments={departments}
+            studyLevels={studyLevels}
             onAddSubject={handleAddSubject}
             onUpdateSubject={handleUpdateSubject}
             onDeleteSubject={handleDeleteSubject}
@@ -320,6 +363,8 @@ export function App() {
             subjects={subjects}
             controlWorks={controlWorks}
             controlStages={controlStages}
+            departments={departments}
+            studyLevels={studyLevels}
             onToggleItem={(subjId, itemIdx) => {
               toggleControlStage(subjId, itemIdx)
               showToast('تم تحديث بند الكنترول بنجاح ✓')
@@ -339,6 +384,13 @@ export function App() {
             departments={departments}
             jobTitles={jobTitles}
             controlStages={controlStages}
+            semesters={semesters}
+            currentSemester={currentSemester}
+            studyLevels={studyLevels}
+            buildings={buildings}
+            floors={floors}
+            workDays={workDays}
+            roleQuotas={roleQuotas}
             onSaveSignatures={handleSaveSignatures}
             onSaveBranding={handleSaveBranding}
             onAddAcademicYear={(year) => {
@@ -379,7 +431,51 @@ export function App() {
             }}
             onUpdateControlStages={(stages) => {
               updateAllControlStages(stages)
-              showToast('تم تحديث وحفظ مسميات بنود الكنترول الـ 14 بنجاح ✓')
+              showToast('تم تحديث بنود الكنترول بنجاح ✓')
+            }}
+            onAddSemester={(s) => {
+              addSemester(s)
+              showToast(`تمت إضافة الفصل الدراسي: "${s}" بنجاح ✓`)
+            }}
+            onDeleteSemester={(s) => {
+              deleteSemester(s)
+              showToast(`تم حذف الفصل: "${s}"`, 'info')
+            }}
+            onSetCurrentSemester={(s) => {
+              setCurrentSemester(s)
+              showToast(`تم تعيين الفصل الدراسي النشط: "${s}" ✓`)
+            }}
+            onAddStudyLevel={(lvl) => {
+              addStudyLevel(lvl)
+              showToast(`تمت إضافة الفرقة الدراسية: "${lvl}" بنجاح ✓`)
+            }}
+            onDeleteStudyLevel={(lvl) => {
+              deleteStudyLevel(lvl)
+              showToast(`تم حذف الفرقة: "${lvl}"`, 'info')
+            }}
+            onAddBuilding={(b) => {
+              addBuilding(b)
+              showToast(`تمت إضافة المبنى: "${b}" بنجاح ✓`)
+            }}
+            onDeleteBuilding={(b) => {
+              deleteBuilding(b)
+              showToast(`تم حذف المبنى: "${b}"`, 'info')
+            }}
+            onAddFloor={(f) => {
+              addFloor(f)
+              showToast(`تمت إضافة الدور: "${f}" بنجاح ✓`)
+            }}
+            onDeleteFloor={(f) => {
+              deleteFloor(f)
+              showToast(`تم حذف الدور: "${f}"`, 'info')
+            }}
+            onToggleWorkDay={(day) => {
+              toggleWorkDay(day)
+              showToast(`تم تحديث حالة يوم: "${day}" ✓`)
+            }}
+            onUpdateRoleQuota={(job, hours) => {
+              updateRoleQuota(job, hours)
+              showToast(`تم تحديث نصاب "${job}" إلى ${hours} ساعة ✓`)
             }}
             onExportBackup={() => {
               exportBackup()

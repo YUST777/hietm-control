@@ -106,6 +106,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           departments: settingsMap['academic_departments'] || null,
           jobTitles: settingsMap['job_titles'] || null,
           controlStages: settingsMap['control_stages'] || null,
+          semesters: settingsMap['semesters'] || null,
+          currentSemester: settingsMap['current_semester'] || null,
+          studyLevels: settingsMap['study_levels'] || null,
+          buildings: settingsMap['buildings'] || null,
+          floors: settingsMap['floors'] || null,
+          workDays: settingsMap['work_days'] || null,
+          roleQuotas: settingsMap['role_quotas'] || null,
+          printNotice: settingsMap['print_notice'] || null,
         },
         timestamp: new Date().toISOString(),
       })
@@ -299,6 +307,78 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
            VALUES ('control_stages', $1, NOW())
            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
           [JSON.stringify(payload.controlStages)]
+        )
+      }
+
+      if (Array.isArray(payload.semesters)) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('semesters', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.semesters)]
+        )
+      }
+
+      if (payload.currentSemester) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('current_semester', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.currentSemester)]
+        )
+      }
+
+      if (Array.isArray(payload.studyLevels)) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('study_levels', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.studyLevels)]
+        )
+      }
+
+      if (Array.isArray(payload.buildings)) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('buildings', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.buildings)]
+        )
+      }
+
+      if (Array.isArray(payload.floors)) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('floors', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.floors)]
+        )
+      }
+
+      if (Array.isArray(payload.workDays)) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('work_days', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.workDays)]
+        )
+      }
+
+      if (payload.roleQuotas) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('role_quotas', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.roleQuotas)]
+        )
+      }
+
+      if (payload.printNotice) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('print_notice', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.printNotice)]
         )
       }
 

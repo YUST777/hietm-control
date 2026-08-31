@@ -32,7 +32,7 @@ function loadLocal<T>(key: string, fallback: T): T {
     const data = localStorage.getItem(key)
     if (data) return JSON.parse(data)
   } catch (e) {
-    console.error(`Failed to load ${key}`, e)
+    // ignore
   }
   return fallback
 }
@@ -41,7 +41,7 @@ function saveLocal<T>(key: string, value: T) {
   try {
     localStorage.setItem(key, JSON.stringify(value))
   } catch (e) {
-    console.error(`Failed to save ${key}`, e)
+    // ignore
   }
 }
 
@@ -80,12 +80,38 @@ export function useControlStore() {
     loadLocal(STORAGE_KEYS.CURRENT_YEAR, INITIAL_ACADEMIC_YEARS[0] || '2024 - 2025')
   )
 
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('syncing')
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced')
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null)
+
+  // Refs to avoid unnecessary effect triggers
+  const stateRef = useRef({
+    observers,
+    subjects,
+    committees,
+    schedules,
+    controlWorks,
+    signatures,
+    currentYear,
+  })
+
+  // Keep stateRef in sync
+  useEffect(() => {
+    stateRef.current = {
+      observers,
+      subjects,
+      committees,
+      schedules,
+      controlWorks,
+      signatures,
+      currentYear,
+    }
+  }, [observers, subjects, committees, schedules, controlWorks, signatures, currentYear])
+
   const isSyncingRef = useRef(false)
   const debounceTimerRef = useRef<any>(null)
+  const hasMountedRef = useRef(false)
 
-  // Local storage auto-sync (always immediate)
+  // Local storage auto-sync (immediate)
   useEffect(() => saveLocal(STORAGE_KEYS.OBSERVERS, observers), [observers])
   useEffect(() => saveLocal(STORAGE_KEYS.SUBJECTS, subjects), [subjects])
   useEffect(() => saveLocal(STORAGE_KEYS.COMMITTEES, committees), [committees])
@@ -95,9 +121,44 @@ export function useControlStore() {
   useEffect(() => saveLocal(STORAGE_KEYS.SIGNATURES, signatures), [signatures])
   useEffect(() => saveLocal(STORAGE_KEYS.CURRENT_YEAR, currentYear), [currentYear])
 
-  // --- AUTOMATIC BACKGROUND CLOUD SYNC ---
+  // Push latest stateRef to cloud
+  const pushToCloud = useCallback(async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setSyncStatus('offline')
+      return
+    }
 
-  // 1. Pull latest data from cloud database
+    if (isSyncingRef.current) return
+    isSyncingRef.current = true
+    setSyncStatus('syncing')
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(stateRef.current),
+      })
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+      setSyncStatus('synced')
+      setLastSyncTime(new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }))
+    } catch {
+      setSyncStatus('offline')
+    } finally {
+      isSyncingRef.current = false
+    }
+  }, [])
+
+  // Trigger debounced cloud push whenever user makes a mutation
+  const queuePush = useCallback(() => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    debounceTimerRef.current = setTimeout(() => {
+      pushToCloud()
+    }, 1200)
+  }, [pushToCloud])
+
+  // Pull once on initial mount
   const pullFromCloud = useCallback(async () => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       setSyncStatus('offline')
@@ -111,7 +172,7 @@ export function useControlStore() {
         headers: { 'Content-Type': 'application/json' },
       })
 
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
       const json = await res.json()
       if (json && json.data) {
@@ -128,66 +189,19 @@ export function useControlStore() {
 
       setSyncStatus('synced')
       setLastSyncTime(new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }))
-    } catch (e) {
-      console.warn('Could not fetch from cloud, running in local-first mode:', e)
+    } catch {
       setSyncStatus('offline')
     }
   }, [])
 
-  // 2. Push local state to cloud database
-  const pushToCloud = useCallback(async () => {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      setSyncStatus('offline')
-      return
-    }
-
-    if (isSyncingRef.current) return
-    isSyncingRef.current = true
-    setSyncStatus('syncing')
-
-    try {
-      const payload = {
-        observers,
-        subjects,
-        committees,
-        schedules,
-        controlWorks,
-        signatures,
-        currentYear,
-      }
-
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`)
-
-      setSyncStatus('synced')
-      setLastSyncTime(new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }))
-    } catch (e) {
-      console.warn('Could not push to cloud, queued locally:', e)
-      setSyncStatus('offline')
-    } finally {
-      isSyncingRef.current = false
-    }
-  }, [observers, subjects, committees, schedules, controlWorks, signatures, currentYear])
-
-  // Trigger debounced cloud push whenever data changes
-  const queuePush = useCallback(() => {
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
-    debounceTimerRef.current = setTimeout(() => {
-      pushToCloud()
-    }, 800)
-  }, [pushToCloud])
-
-  // Initial pull and network listener
+  // Initial pull once on mount + online/offline event listeners
   useEffect(() => {
-    pullFromCloud()
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      pullFromCloud()
+    }
 
     const handleOnline = () => {
-      console.log('Network connected! Syncing with cloud database...')
       pushToCloud()
     }
 

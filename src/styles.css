@@ -38,6 +38,13 @@ html, body {
   height: 100%;
 }
 
+/* Fix RTL Select Dropdown Arrow overlap with Arabic text */
+select {
+  padding-left: 1.75rem !important; /* Generous space on the left so Arabic text never collides with the arrow */
+  padding-right: 0.5rem !important;
+  text-overflow: ellipsis;
+}
+
 /* Custom sleek compact scrollbar */
 ::-webkit-scrollbar {
   width: 5px;

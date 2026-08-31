@@ -57,7 +57,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
   const currentDayName = useMemo(() => getArabicDayName(date), [date])
 
-  // Rows for current schedule slot - starts with standard committees or blank
+  // Rows for current schedule slot
   const [rows, setRows] = useState<ScheduleRow[]>(() => {
     return committees.slice(0, 8).map((c, i) => ({
       id: `row_${i}_${Date.now()}`,
@@ -76,8 +76,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       ...prev,
       {
         id: `row_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        committeeId: '', // Empty unselected committee
-        subjectId: '',   // Empty unselected subject
+        committeeId: '',
+        subjectId: '',
         obs1: '',
         obs2: '',
         obs3: '',
@@ -202,7 +202,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             <select
               value={period}
               onChange={(e) => handleDateOrPeriodChange(date, e.target.value)}
-              className="bg-transparent text-xs font-bold text-[#171717] outline-none cursor-pointer"
+              className="bg-transparent text-xs font-bold text-[#171717] outline-none cursor-pointer pr-2 pl-6"
             >
               {PERIODS.map((p) => (
                 <option key={p} value={p}>
@@ -218,7 +218,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             <select
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="bg-transparent text-xs font-bold text-[#171717] outline-none cursor-pointer"
+              className="bg-transparent text-xs font-bold text-[#171717] outline-none cursor-pointer pr-2 pl-6"
             >
               <option value="09:00 AM">09:00 AM</option>
               <option value="11:30 AM">11:30 AM</option>
@@ -232,7 +232,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             <select
               value={semester}
               onChange={(e) => setSemester(e.target.value)}
-              className="bg-transparent text-xs font-bold text-[#171717] outline-none cursor-pointer"
+              className="bg-transparent text-xs font-bold text-[#171717] outline-none cursor-pointer pr-2 pl-6"
             >
               <option value="الفصل الأول">الفصل الأول</option>
               <option value="الفصل الثاني">الفصل الثاني</option>
@@ -326,11 +326,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             <thead className="sticky top-0 z-10 bg-[#eef3f8]">
               <tr className="text-[10px] font-black text-[#171717]">
                 <th className="border-b border-l border-[#cfcfcb] px-1 py-1 w-8">م</th>
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-1 min-w-36">اللجنة والقاعة</th>
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-1 min-w-44">المقرر الدراسي</th>
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-1 min-w-40">مراقب رئيسي (1)</th>
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-1 min-w-40">مراقب مساعد (2)</th>
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-1 min-w-36">مراقب إضافي (3)</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1 min-w-48">اللجنة والقاعة</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1 min-w-52">المقرر الدراسي</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1 min-w-44">مراقب رئيسي (1)</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1 min-w-44">مراقب مساعد (2)</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1 min-w-40">مراقب إضافي (3)</th>
                 <th className="border-b border-l border-[#cfcfcb] px-1 py-1 w-14">الزمن (س)</th>
                 <th className="border-b border-l border-[#cfcfcb] px-2 py-1 w-20">التوقيع</th>
                 <th className="border-b border-[#cfcfcb] px-1 py-1 w-10 print-hide">حذف</th>
@@ -355,12 +355,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         {idx + 1}
                       </td>
 
-                      {/* Committee Selection (Supports Empty Value) */}
+                      {/* Committee Selection */}
                       <td className="border-b border-l border-[#ecece9] px-1 py-1">
                         <select
                           value={r.committeeId}
                           onChange={(e) => updateRow(r.id, 'committeeId', e.target.value)}
-                          className={`h-6.5 w-full rounded border px-1.5 text-[11px] font-bold outline-none focus:border-[#1f4d78] ${
+                          className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none focus:border-[#1f4d78] truncate ${
                             !r.committeeId
                               ? 'border-[#f59e0b] bg-[#fffbeb] text-[#b45309]'
                               : 'border-[#cfcfcb] bg-white text-[#171717]'
@@ -375,12 +375,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         </select>
                       </td>
 
-                      {/* Subject Selection (Supports Empty Value) */}
+                      {/* Subject Selection */}
                       <td className="border-b border-l border-[#ecece9] px-1 py-1">
                         <select
                           value={r.subjectId}
                           onChange={(e) => updateRow(r.id, 'subjectId', e.target.value)}
-                          className={`h-6.5 w-full rounded border px-1.5 text-[11px] font-bold outline-none focus:border-[#1f4d78] ${
+                          className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none focus:border-[#1f4d78] truncate ${
                             !r.subjectId
                               ? 'border-[#f59e0b] bg-[#fffbeb] text-[#b45309]'
                               : 'border-[#cfcfcb] bg-white text-[#171717]'
@@ -400,7 +400,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         <select
                           value={r.obs1}
                           onChange={(e) => updateRow(r.id, 'obs1', e.target.value)}
-                          className={`h-6.5 w-full rounded border px-1 text-[11px] font-bold outline-none transition ${
+                          className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none transition truncate ${
                             hasObs1Conflict
                               ? 'border-[#dc2626] bg-[#fee2e2] text-[#991b1b]'
                               : 'border-[#cfcfcb] bg-white text-[#171717]'
@@ -425,7 +425,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         <select
                           value={r.obs2}
                           onChange={(e) => updateRow(r.id, 'obs2', e.target.value)}
-                          className={`h-6.5 w-full rounded border px-1 text-[11px] font-bold outline-none transition ${
+                          className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none transition truncate ${
                             hasObs2Conflict
                               ? 'border-[#dc2626] bg-[#fee2e2] text-[#991b1b]'
                               : 'border-[#cfcfcb] bg-white text-[#171717]'
@@ -450,7 +450,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         <select
                           value={r.obs3}
                           onChange={(e) => updateRow(r.id, 'obs3', e.target.value)}
-                          className={`h-6.5 w-full rounded border px-1 text-[11px] font-bold outline-none transition ${
+                          className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none transition truncate ${
                             hasObs3Conflict
                               ? 'border-[#dc2626] bg-[#fee2e2] text-[#991b1b]'
                               : 'border-[#cfcfcb] bg-white text-[#171717]'
@@ -479,7 +479,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           max="5"
                           value={r.duration}
                           onChange={(e) => updateRow(r.id, 'duration', parseFloat(e.target.value) || 2)}
-                          className="h-6.5 w-12 rounded border border-[#cfcfcb] bg-white text-center text-xs font-bold text-[#171717] outline-none"
+                          className="h-7 w-12 rounded-lg border border-[#cfcfcb] bg-white text-center text-xs font-bold text-[#171717] outline-none"
                         />
                       </td>
 
@@ -543,7 +543,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           <select
             value={selectedReserveToAdd}
             onChange={(e) => setSelectedReserveToAdd(e.target.value)}
-            className="h-7 rounded-lg border border-[#cfcfcb] bg-white px-2 text-xs font-bold text-[#333] outline-none"
+            className="h-7.5 rounded-lg border border-[#cfcfcb] bg-white px-2 text-xs font-bold text-[#333] outline-none"
           >
             <option value="">-- اختر مراقب احتياطي --</option>
             {observers

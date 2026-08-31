@@ -124,9 +124,9 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
     const avgHours = total > 0 ? (totalHours / total).toFixed(1) : '0'
 
     // Department breakdown
-    const facultyCount = observers.filter((o) => o.job.includes('هيئة تدريس')).length
-    const assistantCount = observers.filter((o) => o.job.includes('معاونة') || o.job.includes('معيد') || o.job.includes('مساعد')).length
-    const adminCount = observers.filter((o) => o.job.includes('إداري')).length
+    const facultyCount = observers.filter((o) => (o.job || '').includes('هيئة تدريس')).length
+    const assistantCount = observers.filter((o) => (o.job || '').includes('معاونة') || (o.job || '').includes('معيد') || (o.job || '').includes('مساعد')).length
+    const adminCount = observers.filter((o) => (o.job || '').includes('إداري')).length
 
     return {
       total,
@@ -144,14 +144,15 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
     return observers.filter((o) => {
       const matchSearch =
         !search ||
-        o.name.toLowerCase().includes(search.toLowerCase()) ||
-        o.specialization.toLowerCase().includes(search.toLowerCase())
+        (o.name || '').toLowerCase().includes(search.toLowerCase()) ||
+        (o.specialization || '').toLowerCase().includes(search.toLowerCase())
 
+      const jobStr = o.job || ''
       const matchJob =
         selectedJob === 'ALL' ||
-        (selectedJob === 'FACULTY' && o.job.includes('هيئة تدريس')) ||
-        (selectedJob === 'ASSISTANT' && (o.job.includes('معاونة') || o.job.includes('معيد') || o.job.includes('مساعد'))) ||
-        (selectedJob === 'ADMIN' && o.job.includes('إداري'))
+        (selectedJob === 'FACULTY' && jobStr.includes('هيئة تدريس')) ||
+        (selectedJob === 'ASSISTANT' && (jobStr.includes('معاونة') || jobStr.includes('معيد') || jobStr.includes('مساعد'))) ||
+        (selectedJob === 'ADMIN' && jobStr.includes('إداري'))
 
       const hours = o.hours || 0
       const isHigh = hours > parseFloat(kpi.avgHours) * 1.3

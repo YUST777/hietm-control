@@ -48,8 +48,8 @@ export const HoursDashboardView: React.FC<HoursDashboardViewProps> = ({
     return observers.filter((o) => {
       const matchSearch =
         !search ||
-        o.name.toLowerCase().includes(search.toLowerCase()) ||
-        o.specialization.toLowerCase().includes(search.toLowerCase())
+        (o.name || '').toLowerCase().includes(search.toLowerCase()) ||
+        (o.specialization || '').toLowerCase().includes(search.toLowerCase())
       const matchJob = selectedJob === 'ALL' || o.job === selectedJob
       const matchSpec = selectedSpec === 'ALL' || o.specialization === selectedSpec
       return matchSearch && matchJob && matchSpec
@@ -58,7 +58,7 @@ export const HoursDashboardView: React.FC<HoursDashboardViewProps> = ({
 
   const stats = useMemo(() => {
     const totalHours = observers.reduce((sum, o) => sum + (o.hours || 0), 0)
-    const facultyMembers = observers.filter((o) => o.job.includes('هيئة تدريس')).length
+    const facultyMembers = observers.filter((o) => (o.job || '').includes('هيئة تدريس')).length
     const assistants = observers.length - facultyMembers
     return {
       totalHours,
@@ -221,7 +221,14 @@ export const HoursDashboardView: React.FC<HoursDashboardViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#ecece9]">
-              {filtered.map((obs, idx) => (
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-xs font-bold text-[#888]">
+                    لا توجد بيانات مطابقة للبحث أو الفلتر المحدد.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((obs, idx) => (
                 <tr key={obs.id} className="hover:bg-[#fbfbfa] transition group">
                   <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#888]">
                     {idx + 1}
@@ -322,7 +329,7 @@ export const HoursDashboardView: React.FC<HoursDashboardViewProps> = ({
                     </div>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

@@ -54,6 +54,7 @@ export function App() {
 
     controlWorks,
     toggleControlStage,
+    toggleAllControlStages,
 
     signatures,
     updateSignatures,
@@ -114,8 +115,8 @@ export function App() {
     importBackup,
   } = useControlStore()
 
-  // Zoom Level for entire app
-  const [zoomLevel, setZoomLevel] = useState(100)
+  // Zoom Level for entire app (ratio e.g. 0.75, 0.85, 1.0)
+  const [zoomLevel, setZoomLevel] = useState<number>(1.0)
 
   // Toast state
   const [toasts, setToasts] = useState<ToastMessage[]>([])
@@ -208,7 +209,11 @@ export function App() {
   }, [syncStatus, lastSyncTime])
 
   return (
-    <main className="flex h-screen w-screen flex-col overflow-hidden bg-[#fafaf8] text-[#171717] font-sans antialiased select-none" dir="rtl">
+    <main
+      className="flex h-screen w-screen flex-col overflow-hidden bg-[#fafaf8] text-[#171717] font-sans antialiased"
+      style={{ zoom: zoomLevel }}
+      dir="rtl"
+    >
       {/* Top Application Bar */}
       <Navbar
         currentYear={currentYear}
@@ -373,6 +378,10 @@ export function App() {
             onToggleItem={(subjId, itemIdx) => {
               toggleControlStage(subjId, itemIdx)
               showToast('تم تحديث بند الكنترول بنجاح ✓')
+            }}
+            onToggleAllItems={(subjId, setAll) => {
+              toggleAllControlStages(subjId, setAll)
+              showToast(setAll ? 'تم تحديد جميع بنود المقرر بنجاح ✓' : 'تم إلغاء تحديد بنود المقرر ✓')
             }}
             onUpdateSubject={handleUpdateSubject}
             onAddSubject={handleAddSubject}

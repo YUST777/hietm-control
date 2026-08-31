@@ -271,6 +271,7 @@ export function useControlStore() {
   ])
 
   const isSyncingRef = useRef(false)
+  const hasPendingPushRef = useRef(false)
   const debounceTimerRef = useRef<any>(null)
   const hasMountedRef = useRef(false)
 
@@ -297,6 +298,13 @@ export function useControlStore() {
   useEffect(() => saveLocal(STORAGE_KEYS.WORK_DAYS, workDays), [workDays])
   useEffect(() => saveLocal(STORAGE_KEYS.ROLE_QUOTAS, roleQuotas), [roleQuotas])
 
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    }
+  }, [])
+
   // Push latest stateRef to cloud
   const pushToCloud = useCallback(async (isImmediate = false) => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -304,17 +312,27 @@ export function useControlStore() {
       return
     }
 
-    if (isSyncingRef.current && !isImmediate) return
+    if (isSyncingRef.current && !isImmediate) {
+      hasPendingPushRef.current = true
+      return
+    }
     isSyncingRef.current = true
+    hasPendingPushRef.current = false
     setSyncStatus('syncing')
 
     try {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 12000) : null
+
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(stateRef.current),
         keepalive: isImmediate,
+        signal: controller ? controller.signal : undefined,
       })
+
+      if (timeoutId) clearTimeout(timeoutId)
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
@@ -324,6 +342,10 @@ export function useControlStore() {
       setSyncStatus('offline')
     } finally {
       isSyncingRef.current = false
+      if (hasPendingPushRef.current) {
+        hasPendingPushRef.current = false
+        pushToCloud()
+      }
     }
   }, [])
 
@@ -344,22 +366,28 @@ export function useControlStore() {
 
     try {
       setSyncStatus('syncing')
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 12000) : null
+
       const res = await fetch(API_URL, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller ? controller.signal : undefined,
       })
+
+      if (timeoutId) clearTimeout(timeoutId)
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
       const json = await res.json()
       if (json && json.data) {
         const d = json.data
-        if (Array.isArray(d.observers) && d.observers.length > 0) setObservers(d.observers)
-        if (Array.isArray(d.subjects) && d.subjects.length > 0) setSubjects(d.subjects)
-        if (Array.isArray(d.committees) && d.committees.length > 0) setCommittees(d.committees)
-        if (Array.isArray(d.schedules) && d.schedules.length > 0) setSchedules(d.schedules)
-        if (Array.isArray(d.attendance) && d.attendance.length > 0) setAttendance(d.attendance)
-        if (Array.isArray(d.controlWorks) && d.controlWorks.length > 0) setControlWorks(d.controlWorks)
+        if (Array.isArray(d.observers)) setObservers(d.observers)
+        if (Array.isArray(d.subjects)) setSubjects(d.subjects)
+        if (Array.isArray(d.committees)) setCommittees(d.committees)
+        if (Array.isArray(d.schedules)) setSchedules(d.schedules)
+        if (Array.isArray(d.attendance)) setAttendance(d.attendance)
+        if (Array.isArray(d.controlWorks)) setControlWorks(d.controlWorks)
         if (d.signatures && typeof d.signatures === 'object') setSignatures({ ...DEFAULT_SIGNATURES, ...d.signatures })
         if (d.branding && typeof d.branding === 'object') setBranding({ ...DEFAULT_BRANDING, ...d.branding })
         if (Array.isArray(d.academicYears) && d.academicYears.length > 0) setAcademicYears(d.academicYears)
@@ -392,11 +420,11 @@ export function useControlStore() {
     }
   }, [pullFromCloud])
 
-  // Sync on online event
+  // Sync on online event (sequential push then pull)
   useEffect(() => {
-    const handleOnline = () => {
-      pushToCloud()
-      pullFromCloud()
+    const handleOnline = async () => {
+      await pushToCloud()
+      await pullFromCloud()
     }
     const handleOffline = () => setSyncStatus('offline')
 
@@ -534,6 +562,32 @@ export function useControlStore() {
             dept: subj?.dept || '',
             year: subj?.year || '',
             checklist: { [itemIndex]: true },
+          },
+        ]
+      }
+    })
+    queuePush()
+  }
+
+  const toggleAllControlStages = (subjectId: string, setAll: boolean) => {
+    setControlWorks((prev) => {
+      const existing = prev.find((cw) => cw.subjectId === subjectId)
+      const subj = subjects.find((s) => s.id === subjectId)
+      const newChecklist: Record<number, boolean> = {}
+      for (let i = 0; i < controlStages.length; i++) {
+        newChecklist[i] = setAll
+      }
+      if (existing) {
+        return prev.map((cw) => (cw.subjectId === subjectId ? { ...cw, checklist: newChecklist } : cw))
+      } else {
+        return [
+          ...prev,
+          {
+            subjectId,
+            subjectName: subj?.name || '',
+            dept: subj?.dept || '',
+            year: subj?.year || '',
+            checklist: newChecklist,
           },
         ]
       }
@@ -876,6 +930,7 @@ export function useControlStore() {
     controlWorks,
     setControlWorks,
     toggleControlStage,
+    toggleAllControlStages,
 
     signatures,
     setSignatures,

@@ -37,13 +37,15 @@ export const ObserverDaysView: React.FC<ObserverDaysViewProps> = ({
     return observers.filter((o) => {
       const matchSearch =
         !search ||
-        o.name.toLowerCase().includes(search.toLowerCase()) ||
-        o.specialization.toLowerCase().includes(search.toLowerCase())
+        (o.name || '').toLowerCase().includes(search.toLowerCase()) ||
+        (o.specialization || '').toLowerCase().includes(search.toLowerCase())
+
+      const jobStr = o.job || ''
       const matchJob =
         jobFilter === 'ALL' ||
-        (jobFilter === 'FACULTY' && o.job.includes('هيئة تدريس')) ||
-        (jobFilter === 'ASSISTANT' && (o.job.includes('معاونة') || o.job.includes('معيد') || o.job.includes('مساعد'))) ||
-        (jobFilter === 'ADMIN' && o.job.includes('إداري'))
+        (jobFilter === 'FACULTY' && jobStr.includes('هيئة تدريس')) ||
+        (jobFilter === 'ASSISTANT' && (jobStr.includes('معاونة') || jobStr.includes('معيد') || jobStr.includes('مساعد'))) ||
+        (jobFilter === 'ADMIN' && jobStr.includes('إداري'))
       return matchSearch && matchJob
     })
   }, [observers, search, jobFilter])
@@ -154,7 +156,14 @@ export const ObserverDaysView: React.FC<ObserverDaysViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#ecece9]">
-              {filtered.map((obs, idx) => {
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-xs font-bold text-[#888]">
+                    لا توجد بيانات مطابقة للبحث أو الفلتر المحدد.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((obs, idx) => {
                 const assignedDays = obs.days
                   ? obs.days.split(',').map((d) => d.trim()).filter(Boolean)
                   : []
@@ -242,7 +251,7 @@ export const ObserverDaysView: React.FC<ObserverDaysViewProps> = ({
                     </td>
                   </tr>
                 )
-              })}
+              }))}
             </tbody>
           </table>
         </div>

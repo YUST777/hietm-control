@@ -39,6 +39,7 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
   departments: customDepartments,
   studyLevels,
   onToggleItem,
+  onToggleAllItems,
   onUpdateSubject,
   onAddSubject,
 }) => {
@@ -101,15 +102,20 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
   const handleToggleRowAll = (subjectId: string) => {
     const ch = checklistMap.get(subjectId) || {}
     let allChecked = true
-    for (let i = 1; i <= controlStages.length; i++) {
+    for (let i = 0; i < controlStages.length; i++) {
       if (!ch[i]) {
         allChecked = false
         break
       }
     }
-    for (let i = 1; i <= controlStages.length; i++) {
-      if (ch[i] === allChecked) {
-        onToggleItem(subjectId, i)
+    const nextState = !allChecked
+    if (onToggleAllItems) {
+      onToggleAllItems(subjectId, nextState)
+    } else {
+      for (let i = 0; i < controlStages.length; i++) {
+        if (!!ch[i] !== nextState) {
+          onToggleItem(subjectId, i)
+        }
       }
     }
   }

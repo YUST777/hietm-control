@@ -14,7 +14,7 @@ interface ToastProps {
 
 export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
   return (
-    <div className="fixed bottom-4 left-4 z-50 flex flex-col gap-2 pointer-events-none print-hide">
+    <div className="fixed bottom-4 left-4 z-[100] flex flex-col gap-2 pointer-events-none print-hide">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
       ))}
@@ -52,7 +52,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
       <button
         type="button"
         onClick={() => onDismiss(toast.id)}
-        className="mr-1 rounded-md p-1 opacity-70 hover:opacity-100 hover:bg-black/5 transition"
+        className="ms-auto mr-0 rounded-md p-1 opacity-70 hover:opacity-100 hover:bg-black/5 transition cursor-pointer"
       >
         <X className="size-3.5" />
       </button>

@@ -12,6 +12,31 @@ function downloadCSV(csvContent: string, filename: string) {
   URL.revokeObjectURL(url)
 }
 
+function parseCSVLines(csvText: string): string[][] {
+  const cleanText = csvText.replace(/^\uFEFF/, '').trim()
+  if (!cleanText) return []
+
+  const rawLines = cleanText.split(/\r?\n/).filter((l) => l.trim().length > 0)
+  if (rawLines.length === 0) return []
+
+  // Auto-detect delimiter based on first non-empty line
+  const firstLine = rawLines[0]
+  let delimiter = ','
+  if (firstLine.includes(';') && !firstLine.includes(',')) {
+    delimiter = ';'
+  } else if (firstLine.includes('\t')) {
+    delimiter = '\t'
+  }
+
+  const delimiterRegex = new RegExp(`${delimiter === '\t' ? '\\t' : delimiter}(?=(?:(?:[^"]*"){2})*[^"]*$)`)
+
+  return rawLines.map((line) =>
+    line.split(delimiterRegex).map((c) =>
+      c.replace(/^"|"$/g, '').replace(/""/g, '"').trim()
+    )
+  )
+}
+
 // 1. Observers Excel/CSV
 export function exportObserversCSV(observers: Observer[]) {
   const headers = ['الاسم', 'الوظيفة', 'التخصص / القسم', 'أيام التفرغ', 'ساعات المراقبة']
@@ -27,21 +52,15 @@ export function exportObserversCSV(observers: Observer[]) {
 }
 
 export function parseObserversCSV(csvText: string): Omit<Observer, 'id'>[] {
-  const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0)
-  if (lines.length <= 1) return []
-
-  const results: Omit<Observer, 'id'>[] = []
+  const grid = parseCSVLines(csvText)
+  if (grid.length === 0) return []
 
   // Skip header if contains 'الاسم' or 'name'
-  const startIndex = lines[0].includes('الاسم') || lines[0].toLowerCase().includes('name') ? 1 : 0
+  const startIndex = grid[0][0]?.includes('الاسم') || grid[0][0]?.toLowerCase().includes('name') ? 1 : 0
+  const results: Omit<Observer, 'id'>[] = []
 
-  for (let i = startIndex; i < lines.length; i++) {
-    const line = lines[i]
-    // Regex for CSV split handling quotes
-    const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map((c) =>
-      c.replace(/^"|"$/g, '').trim()
-    )
-
+  for (let i = startIndex; i < grid.length; i++) {
+    const cols = grid[i]
     if (cols[0]) {
       results.push({
         name: cols[0],
@@ -71,20 +90,17 @@ export function exportSubjectsCSV(subjects: Subject[]) {
 }
 
 export function parseSubjectsCSV(csvText: string): Omit<Subject, 'id'>[] {
-  const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0)
-  if (lines.length <= 1) return []
+  const grid = parseCSVLines(csvText)
+  if (grid.length === 0) return []
 
+  const startIndex = grid[0][0]?.includes('كود') || grid[0][0]?.toLowerCase().includes('code') ? 1 : 0
   const results: Omit<Subject, 'id'>[] = []
-  const startIndex = lines[0].includes('كود') || lines[0].toLowerCase().includes('code') ? 1 : 0
 
-  for (let i = startIndex; i < lines.length; i++) {
-    const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map((c) =>
-      c.replace(/^"|"$/g, '').trim()
-    )
-
+  for (let i = startIndex; i < grid.length; i++) {
+    const cols = grid[i]
     if (cols[1] || cols[0]) {
       results.push({
-        code: cols[0] || `CODE_${Date.now()}`,
+        code: cols[0] || `CODE_${Date.now()}_${i}`,
         name: cols[1] || cols[0],
         dept: cols[2] || 'قسم العلوم الأساسية',
         year: cols[3] || 'الفرقة الإعدادية',
@@ -111,17 +127,14 @@ export function exportCommitteesCSV(committees: Committee[]) {
 }
 
 export function parseCommitteesCSV(csvText: string): Omit<Committee, 'id'>[] {
-  const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0)
-  if (lines.length <= 1) return []
+  const grid = parseCSVLines(csvText)
+  if (grid.length === 0) return []
 
+  const startIndex = grid[0][0]?.includes('رقم') || grid[0][0]?.toLowerCase().includes('room') ? 1 : 0
   const results: Omit<Committee, 'id'>[] = []
-  const startIndex = lines[0].includes('رقم') || lines[0].toLowerCase().includes('room') ? 1 : 0
 
-  for (let i = startIndex; i < lines.length; i++) {
-    const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map((c) =>
-      c.replace(/^"|"$/g, '').trim()
-    )
-
+  for (let i = startIndex; i < grid.length; i++) {
+    const cols = grid[i]
     if (cols[0]) {
       results.push({
         roomNum: cols[0],

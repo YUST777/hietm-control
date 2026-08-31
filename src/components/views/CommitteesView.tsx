@@ -125,8 +125,15 @@ export const CommitteesView: React.FC<CommitteesViewProps> = ({
 
       {/* Grid of Committees */}
       <div className="flex min-h-0 flex-1 flex-col overflow-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {committees.map((c) => (
+        {committees.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-12 text-center">
+            <Building className="size-10 text-[#bbb] mb-2" />
+            <p className="text-xs font-bold text-[#777]">لا توجد لجان أو قاعات امتحانية مسجلة حتى الآن.</p>
+            <p className="text-[11px] text-[#999] mt-1">انقر على زر "إضافة لجنة / قاعة" لإدخال لجان الامتحانات.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {committees.map((c) => (
             <div
               key={c.id}
               className="flex flex-col justify-between rounded-xl border border-[#dededb] bg-white p-3 shadow-xs hover:border-[#1f4d78] hover:shadow-sm transition"
@@ -168,7 +175,8 @@ export const CommitteesView: React.FC<CommitteesViewProps> = ({
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Edit/Add Committee Modal */}

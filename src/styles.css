@@ -61,17 +61,29 @@ select {
   background: #1f4d78;
 }
 
+.print-only {
+  display: none;
+}
+
 @media print {
   @page {
     size: A4 landscape;
     margin: 6mm;
   }
 
-  body {
+  html, body, #root, main {
     background-color: #ffffff !important;
     color: #000000 !important;
     zoom: 1 !important;
     overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  div {
+    overflow: visible !important;
+    max-height: none !important;
   }
 
   .print-hide {

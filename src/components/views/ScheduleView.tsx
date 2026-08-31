@@ -181,7 +181,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     onSaveSlot(slotData)
   }
 
-  // Load existing slot if available
+  // Load existing slot if available, or reset to empty template
   const handleDateOrPeriodChange = (newDate: string, newPeriod: string) => {
     setDate(newDate)
     setPeriod(newPeriod)
@@ -193,6 +193,19 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       if (existing.startTime) setStartTime(existing.startTime)
       if (existing.semester) setSemester(existing.semester)
       if (existing.examType) setExamType(existing.examType)
+    } else {
+      // Clean template for uncreated slot
+      const initialRows: ScheduleRow[] = committees.slice(0, 8).map((c, i) => ({
+        id: `row_${i}_${Date.now()}`,
+        committeeId: c.id,
+        subjectId: subjects[i % subjects.length]?.id || '',
+        obs1: '',
+        obs2: '',
+        obs3: '',
+        duration: 2,
+      }))
+      setRows(initialRows)
+      setReserves([])
     }
   }
 

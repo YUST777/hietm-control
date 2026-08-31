@@ -127,12 +127,13 @@ export function useControlStore() {
     } catch {}
   }, [branding.primaryColor, branding.appName, branding.instituteName, branding.logoUrl])
 
-  // Refs to avoid unnecessary effect triggers
+  // Refs to avoid unnecessary effect triggers - Mirror 100% of state
   const stateRef = useRef({
     observers,
     subjects,
     committees,
     schedules,
+    attendance,
     controlWorks,
     signatures,
     branding,
@@ -147,13 +148,14 @@ export function useControlStore() {
       subjects,
       committees,
       schedules,
+      attendance,
       controlWorks,
       signatures,
       branding,
       academicYears,
       currentYear,
     }
-  }, [observers, subjects, committees, schedules, controlWorks, signatures, branding, academicYears, currentYear])
+  }, [observers, subjects, committees, schedules, attendance, controlWorks, signatures, branding, academicYears, currentYear])
 
   const isSyncingRef = useRef(false)
   const debounceTimerRef = useRef<any>(null)
@@ -232,6 +234,7 @@ export function useControlStore() {
         if (Array.isArray(d.subjects) && d.subjects.length > 0) setSubjects(d.subjects)
         if (Array.isArray(d.committees) && d.committees.length > 0) setCommittees(d.committees)
         if (Array.isArray(d.schedules) && d.schedules.length > 0) setSchedules(d.schedules)
+        if (Array.isArray(d.attendance) && d.attendance.length > 0) setAttendance(d.attendance)
         if (Array.isArray(d.controlWorks) && d.controlWorks.length > 0) setControlWorks(d.controlWorks)
         if (d.signatures && typeof d.signatures === 'object') setSignatures(d.signatures)
         if (d.branding && typeof d.branding === 'object') setBranding(d.branding)
@@ -351,7 +354,13 @@ export function useControlStore() {
     queuePush()
   }
 
-  // 5. Control Works
+  // 5. Daily Attendance
+  const saveAttendanceRecords = (records: DailyAttendanceRecord[]) => {
+    setAttendance(records)
+    queuePush()
+  }
+
+  // 6. Control Works
   const toggleControlStage = (subjectId: string, itemIndex: number) => {
     setControlWorks((prev) => {
       const existing = prev.find((cw) => cw.subjectId === subjectId)
@@ -378,7 +387,7 @@ export function useControlStore() {
     queuePush()
   }
 
-  // 6. Signatures & Settings
+  // 7. Signatures & Settings
   const updateSignatures = (sigs: PrintSignatures) => {
     setSignatures(sigs)
     queuePush()
@@ -503,7 +512,7 @@ export function useControlStore() {
     deleteScheduleSlot,
 
     attendance,
-    setAttendance,
+    setAttendance: saveAttendanceRecords,
 
     controlWorks,
     setControlWorks,

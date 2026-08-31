@@ -90,6 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             reserves: Array.isArray(slot.reserves) ? slot.reserves : [],
             rows: Array.isArray(slot.rows) ? slot.rows : [],
           })),
+          attendance: settingsMap['attendance_records'] || [],
           controlWorks: ctrlRes.rows.map((c: any) => ({
             subjectId: c.subject_id,
             subjectName: c.subject_name,
@@ -197,7 +198,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      // 5. Sync Control Works
+      // 5. Sync Attendance Records
+      if (Array.isArray(payload.attendance)) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('attendance_records', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.attendance)]
+        )
+      }
+
+      // 6. Sync Control Works
       if (Array.isArray(payload.controlWorks)) {
         for (const cw of payload.controlWorks) {
           await client.query(
@@ -214,7 +225,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      // 6. Sync Signatures & Settings
+      // 7. Sync Signatures & Settings
       if (payload.signatures) {
         await client.query(
           `INSERT INTO public.system_settings (key, value, updated_at)
@@ -256,7 +267,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       return res.status(200).json({
         success: true,
-        message: 'Data synced successfully to cloud PostgreSQL',
+        message: 'All application data and settings synced fully to cloud PostgreSQL database',
         timestamp: new Date().toISOString(),
       })
     }

@@ -255,6 +255,10 @@ export function App() {
             {activeProctoringTab === 'hours' && (
               <HoursDashboardView
                 observers={observers}
+                jobTitles={jobTitles}
+                departments={departments}
+                workDays={workDays}
+                roleQuotas={roleQuotas}
                 onUpdateObserver={handleUpdateObserver}
                 onAddObserver={handleAddObserver}
                 onDeleteObserver={handleDeleteObserver}

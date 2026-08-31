@@ -5,6 +5,10 @@ import { EditObserverModal } from '../modals/EditObserverModal'
 
 interface HoursDashboardViewProps {
   observers: Observer[]
+  jobTitles?: string[]
+  departments?: string[]
+  workDays?: string[]
+  roleQuotas?: Record<string, number>
   onUpdateObserver: (id: string, updates: Partial<Observer>) => void
   onAddObserver: (obs: Omit<Observer, 'id'>) => void
   onDeleteObserver: (id: string) => void
@@ -13,6 +17,10 @@ interface HoursDashboardViewProps {
 
 export const HoursDashboardView: React.FC<HoursDashboardViewProps> = ({
   observers,
+  jobTitles,
+  departments,
+  workDays,
+  roleQuotas,
   onUpdateObserver,
   onAddObserver,
   onDeleteObserver,
@@ -324,6 +332,10 @@ export const HoursDashboardView: React.FC<HoursDashboardViewProps> = ({
       <EditObserverModal
         isOpen={isModalOpen}
         observer={selectedObserverToEdit}
+        jobTitles={jobTitles}
+        departments={departments}
+        workDays={workDays}
+        roleQuotas={roleQuotas}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveModal}
       />

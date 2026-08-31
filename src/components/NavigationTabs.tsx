@@ -58,14 +58,14 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
         <button
           type="button"
           onClick={() => setActiveMainTab('control')}
-          className={`flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-bold transition ${
+          className={`flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
             activeMainTab === 'control'
               ? 'bg-[#1f4d78] text-white shadow-sm'
               : 'text-[#555] hover:bg-[#f0f0ee]'
           }`}
         >
           <CheckSquare className="size-4" />
-          <span>متابعة أعمال الكنترول (14 بند)</span>
+          <span>متابعة أعمال ومراحل الكنترول</span>
         </button>
 
         <button

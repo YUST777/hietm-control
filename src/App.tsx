@@ -398,9 +398,9 @@ export function App() {
         )}
       </div>
 
-      {/* Floating Developer Credit - ONLY in Settings Tab (#ffffff) */}
+      {/* Pure Floating Text - ONLY in Settings Tab (No widget, no borders, no box) */}
       {activeMainTab === 'settings' && (
-        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-center justify-center gap-1.5 rounded-full bg-[#ffffff] px-3.5 py-1 text-[10.5px] font-medium text-[#777] shadow-sm border border-[#e5e5e5] print-hide opacity-85 hover:opacity-100 transition whitespace-nowrap">
+        <div className="fixed bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-1.5 text-[10.5px] font-medium text-[#888] print-hide opacity-80 hover:opacity-100 transition whitespace-nowrap">
           <span>نظام إدارة الكنترول والمراقبات | تطوير: يوسف</span>
           <span className="text-[#ccc]">•</span>
           <a

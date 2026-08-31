@@ -1024,11 +1024,11 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-1">
                     <h2 className="text-lg font-black text-white">
-                      تم التطوير والبناء بواسطة المهندس: يوسف (Yousef)
+                      تم التطوير والبناء بواسطة: يوسف (Yousef)
                     </h2>
                     <span className="inline-flex items-center gap-1 rounded-full bg-[#38bdf8]/15 px-2.5 py-0.5 text-[10.5px] font-bold text-[#38bdf8] border border-[#38bdf8]/30">
                       <Sparkles className="size-3" />
-                      <span>System Architect & Lead Engineer</span>
+                      <span>Software Engineer & System Developer</span>
                     </span>
                   </div>
 
@@ -1113,22 +1113,46 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
           </div>
         )}
 
-        {/* Global Save Button */}
-        <div className="flex items-center justify-between rounded-xl bg-white border border-[#dededb] p-3 shadow-xs">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#555]">
+        {/* Global Save Button & All Developer Links Footer */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white border border-[#dededb] p-3 shadow-xs">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#555]">
             <Sparkles className="size-4" style={{ color: primaryColor }} />
-            <span>
-              نظام إدارة الكنترول والمراقبات | تطوير المهندس: يوسف (
+            <span>نظام إدارة الكنترول والمراقبات | تطوير: يوسف</span>
+            <span className="text-[#ccc]">•</span>
+            <div className="flex items-center gap-2">
               <a
                 href="https://www.yust.dev/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#1f4d78] underline hover:text-[#0284c7]"
+                className="flex items-center gap-1 text-[#1f4d78] hover:text-[#0284c7] underline transition"
+                title="الموقع الرسمي"
               >
-                yust.dev
+                <Globe className="size-3" />
+                <span>yust.dev</span>
               </a>
-              )
-            </span>
+              <span className="text-[#ccc]">•</span>
+              <a
+                href="https://www.linkedin.com/in/yousefmsm1/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[#0a66c2] hover:underline transition"
+                title="حساب LinkedIn"
+              >
+                <Linkedin className="size-3" />
+                <span>LinkedIn</span>
+              </a>
+              <span className="text-[#ccc]">•</span>
+              <a
+                href="https://github.com/YUST777"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[#171717] hover:underline transition"
+                title="حساب GitHub"
+              >
+                <Github className="size-3" />
+                <span>GitHub</span>
+              </a>
+            </div>
           </div>
 
           <button

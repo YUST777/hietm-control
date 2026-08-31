@@ -120,36 +120,33 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
   // Local attendance state for current date & period
   const [localRecords, setLocalRecords] = useState<DailyAttendanceRecord[]>([])
+  const prevSlotKeyRef = React.useRef('')
 
-  // Synchronize localRecords when date/period changes or when slot changes
+  // Synchronize localRecords only when date/period changes
   React.useEffect(() => {
-    const existing = attendance.filter((a) => a.date === date && a.period === period)
+    const slotKey = `${date}_${period}`
+    if (prevSlotKeyRef.current !== slotKey) {
+      prevSlotKeyRef.current = slotKey
+      const existing = attendance.filter((a) => a.date === date && a.period === period)
 
-    if (existing.length > 0) {
-      setLocalRecords(existing)
-    } else if (slotAssignedProctors.length > 0) {
-      const initial: DailyAttendanceRecord[] = slotAssignedProctors.map((p) => {
-        const obsObj = observers.find((o) => o.name === p.observerName)
-        return {
-          date,
-          period,
-          observerId: obsObj?.id || p.observerName,
-          observerName: p.observerName,
-          status: 'present',
-          notes: `${p.roleType} - ${p.committeeName}`,
-        }
-      })
-      setLocalRecords(initial)
-    } else {
-      const initial: DailyAttendanceRecord[] = observers.slice(0, 15).map((o) => ({
-        date,
-        period,
-        observerId: o.id,
-        observerName: o.name,
-        status: 'present',
-        notes: o.job,
-      }))
-      setLocalRecords(initial)
+      if (existing.length > 0) {
+        setLocalRecords(existing)
+      } else if (slotAssignedProctors.length > 0) {
+        const initial: DailyAttendanceRecord[] = slotAssignedProctors.map((p) => {
+          const obsObj = observers.find((o) => o.name === p.observerName)
+          return {
+            date,
+            period,
+            observerId: obsObj?.id || p.observerName,
+            observerName: p.observerName,
+            status: 'present',
+            notes: `${p.roleType} - ${p.committeeName}`,
+          }
+        })
+        setLocalRecords(initial)
+      } else {
+        setLocalRecords([])
+      }
     }
   }, [date, period, slotAssignedProctors, attendance, observers])
 
@@ -370,7 +367,10 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             <p>{branding.headerLine2 || branding.instituteName || 'المعهد العالي للهندسة والتكنولوجيا'}</p>
             <p>{branding.headerLine3 || 'إدارة الكنترول والجداول الامتحانية'}</p>
           </div>
-          <div className="text-center">
+          <div className="flex flex-col items-center justify-center text-center">
+            {branding.logoUrl && (
+              <img src={branding.logoUrl} alt="Logo" className="h-11 w-auto object-contain mb-1" />
+            )}
             <h2 className="text-sm font-black underline">كشف توثيق حضور وانصراف المراقبين والملاحظين</h2>
             <p className="text-[11px] font-bold mt-0.5">
               العام الجامعي: {currentYear} — {currentDayName} ({date})
@@ -419,7 +419,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                   .map(({ r, actualIdx }, displayIdx) => {
                     const isNewOrEmpty = !r.observerName
                     return (
-                      <tr key={r.observerId || actualIdx} className="hover:bg-[#fbfbfa] transition">
+                      <tr key={`${r.observerId || 'row'}_${actualIdx}`} className="hover:bg-[#fbfbfa] transition">
                         <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#888]">
                           {displayIdx + 1}
                         </td>
@@ -428,6 +428,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                         <td className="border-b border-l border-[#ecece9] px-2 py-1 text-right font-black text-[#171717]">
                           <select
                             value={r.observerName}
+                            title={r.observerName || 'اختر المراقب من القائمة'}
                             onChange={(e) => updateObserverName(actualIdx, e.target.value)}
                             className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none focus:border-[#1f4d78] truncate ${
                               isNewOrEmpty
@@ -552,7 +553,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       )}
 
       {/* Official Signatures Footer (Printable) */}
-      <div className="mt-2 flex items-center justify-between border-t border-[#dededb] pt-2 px-3 text-center text-xs font-black text-[#171717]">
+      <div className="mt-2 flex items-center justify-between border-t border-[#dededb] pt-2 px-3 text-center text-xs font-black text-[#171717] print-avoid-break">
         <div className="flex flex-col items-center">
           <p className="text-[11px] font-bold text-[#666]">مسؤول تسجيل الحضور:</p>
           <p className="mt-0.5 text-xs font-black">.......................................</p>

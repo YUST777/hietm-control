@@ -76,7 +76,9 @@ function loadLocal<T>(key: string, fallback: T): T {
     const data = localStorage.getItem(key)
     if (data) {
       const parsed = JSON.parse(data)
+      if (parsed === null || parsed === undefined) return fallback
       if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback
+      if (typeof fallback === 'object' && !Array.isArray(fallback) && (typeof parsed !== 'object' || Array.isArray(parsed))) return fallback
       return parsed
     }
   } catch (e) {
@@ -574,7 +576,7 @@ export function useControlStore() {
       const existing = prev.find((cw) => cw.subjectId === subjectId)
       const subj = subjects.find((s) => s.id === subjectId)
       const newChecklist: Record<number, boolean> = {}
-      for (let i = 0; i < controlStages.length; i++) {
+      for (let i = 1; i <= controlStages.length; i++) {
         newChecklist[i] = setAll
       }
       if (existing) {
@@ -875,18 +877,18 @@ export function useControlStore() {
       if (Array.isArray(parsed.controlWorks)) setControlWorks(parsed.controlWorks)
       if (parsed.signatures && typeof parsed.signatures === 'object') setSignatures({ ...DEFAULT_SIGNATURES, ...parsed.signatures })
       if (parsed.branding && typeof parsed.branding === 'object') setBranding({ ...DEFAULT_BRANDING, ...parsed.branding })
-      if (Array.isArray(parsed.academicYears)) setAcademicYears(parsed.academicYears)
-      if (typeof parsed.currentYear === 'string') setCurrentYearState(parsed.currentYear)
-      if (Array.isArray(parsed.periods)) setPeriods(parsed.periods)
-      if (Array.isArray(parsed.departments)) setDepartments(parsed.departments)
-      if (Array.isArray(parsed.jobTitles)) setJobTitles(parsed.jobTitles)
-      if (Array.isArray(parsed.controlStages)) setControlStages(parsed.controlStages)
-      if (Array.isArray(parsed.semesters)) setSemesters(parsed.semesters)
-      if (typeof parsed.currentSemester === 'string') setCurrentSemesterState(parsed.currentSemester)
-      if (Array.isArray(parsed.studyLevels)) setStudyLevels(parsed.studyLevels)
-      if (Array.isArray(parsed.buildings)) setBuildings(parsed.buildings)
-      if (Array.isArray(parsed.floors)) setFloors(parsed.floors)
-      if (Array.isArray(parsed.workDays)) setWorkDays(parsed.workDays)
+      if (Array.isArray(parsed.academicYears) && parsed.academicYears.length > 0) setAcademicYears(parsed.academicYears)
+      if (typeof parsed.currentYear === 'string' && parsed.currentYear.trim().length > 0) setCurrentYearState(parsed.currentYear)
+      if (Array.isArray(parsed.periods) && parsed.periods.length > 0) setPeriods(parsed.periods)
+      if (Array.isArray(parsed.departments) && parsed.departments.length > 0) setDepartments(parsed.departments)
+      if (Array.isArray(parsed.jobTitles) && parsed.jobTitles.length > 0) setJobTitles(parsed.jobTitles)
+      if (Array.isArray(parsed.controlStages) && parsed.controlStages.length > 0) setControlStages(parsed.controlStages)
+      if (Array.isArray(parsed.semesters) && parsed.semesters.length > 0) setSemesters(parsed.semesters)
+      if (typeof parsed.currentSemester === 'string' && parsed.currentSemester.trim().length > 0) setCurrentSemesterState(parsed.currentSemester)
+      if (Array.isArray(parsed.studyLevels) && parsed.studyLevels.length > 0) setStudyLevels(parsed.studyLevels)
+      if (Array.isArray(parsed.buildings) && parsed.buildings.length > 0) setBuildings(parsed.buildings)
+      if (Array.isArray(parsed.floors) && parsed.floors.length > 0) setFloors(parsed.floors)
+      if (Array.isArray(parsed.workDays) && parsed.workDays.length > 0) setWorkDays(parsed.workDays)
       if (parsed.roleQuotas && typeof parsed.roleQuotas === 'object') setRoleQuotas({ ...INITIAL_ROLE_QUOTAS, ...parsed.roleQuotas })
 
       queuePush()

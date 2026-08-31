@@ -52,7 +52,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
       <button
         type="button"
         onClick={() => onDismiss(toast.id)}
-        className="ms-auto mr-0 rounded-md p-1 opacity-70 hover:opacity-100 hover:bg-black/5 transition cursor-pointer"
+        className="ms-auto rounded-md p-1 opacity-70 hover:opacity-100 hover:bg-black/5 transition cursor-pointer"
       >
         <X className="size-3.5" />
       </button>

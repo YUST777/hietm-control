@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import type {
   Observer,
   Subject,
@@ -66,6 +66,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const [startTime, setStartTime] = useState('09:00 AM')
   const [semester, setSemester] = useState(currentSemester || semesters[0] || DEFAULT_SEMESTERS[0])
   const [examType, setExamType] = useState('تحريري')
+
+  // Keep semester in sync with global state
+  useEffect(() => {
+    if (currentSemester) setSemester(currentSemester)
+  }, [currentSemester])
 
   // Reserves list
   const [reserves, setReserves] = useState<string[]>([])
@@ -357,7 +362,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             <p>{branding?.headerLine2 || branding?.instituteName || 'المعهد العالي للهندسة والتكنولوجيا'}</p>
             <p>{branding?.headerLine3 || 'إدارة الكنترول والجداول الامتحانية'}</p>
           </div>
-          <div className="text-center">
+          <div className="flex flex-col items-center justify-center text-center">
+            {branding?.logoUrl && (
+              <img src={branding.logoUrl} alt="Logo" className="h-11 w-auto object-contain mb-1" />
+            )}
             <h2 className="text-sm font-black underline">كشف توزيع الملاحظات والمراقبات الامتحانية</h2>
             <p className="text-[11px] font-bold mt-0.5">
               العام الجامعي: {currentYear} — {semester} ({examType})
@@ -401,10 +409,6 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   const hasObs2Conflict = r.obs2 && conflicts.includes(r.obs2.trim())
                   const hasObs3Conflict = r.obs3 && conflicts.includes(r.obs3.trim())
 
-                  // Fallback checks for orphaned committee or subject IDs
-                  const committeeFound = !r.committeeId || committees.some((c) => c.id === r.committeeId)
-                  const subjectFound = !r.subjectId || subjects.some((s) => s.id === r.subjectId)
-
                   return (
                     <tr key={r.id} className="hover:bg-[#fbfbfa] transition">
                       <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#888]">
@@ -415,6 +419,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       <td className="border-b border-l border-[#ecece9] px-1 py-1">
                         <select
                           value={r.committeeId}
+                          title={committees.find((c) => c.id === r.committeeId)?.hallName || 'اختر اللجنة والقاعة'}
                           onChange={(e) => updateRow(r.id, 'committeeId', e.target.value)}
                           className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none focus:border-[#1f4d78] truncate ${
                             !r.committeeId
@@ -423,9 +428,6 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           }`}
                         >
                           <option value="">-- اختر اللجنة والقاعة --</option>
-                          {!committeeFound && (
-                            <option value={r.committeeId}>لجنة سابقة ({r.committeeId})</option>
-                          )}
                           {committees.map((c) => (
                             <option key={c.id} value={c.id}>
                               لجنة {c.roomNum} — {c.hallName} ({c.floor})
@@ -438,6 +440,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       <td className="border-b border-l border-[#ecece9] px-1 py-1">
                         <select
                           value={r.subjectId}
+                          title={subjects.find((s) => s.id === r.subjectId)?.name || 'اختر المقرر الدراسي'}
                           onChange={(e) => updateRow(r.id, 'subjectId', e.target.value)}
                           className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none focus:border-[#1f4d78] truncate ${
                             !r.subjectId
@@ -446,9 +449,6 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           }`}
                         >
                           <option value="">-- اختر المقرر الدراسي --</option>
-                          {!subjectFound && (
-                            <option value={r.subjectId}>مقرر سابق ({r.subjectId})</option>
-                          )}
                           {subjects.map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.name} ({s.code}) - {s.dept}
@@ -461,6 +461,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       <td className="border-b border-l border-[#ecece9] px-1 py-1">
                         <select
                           value={r.obs1}
+                          title={r.obs1 || 'اختر المراقب الرئيسي'}
                           onChange={(e) => updateRow(r.id, 'obs1', e.target.value)}
                           className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none transition truncate ${
                             hasObs1Conflict
@@ -486,6 +487,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       <td className="border-b border-l border-[#ecece9] px-1 py-1">
                         <select
                           value={r.obs2}
+                          title={r.obs2 || 'اختر المراقب المساعد'}
                           onChange={(e) => updateRow(r.id, 'obs2', e.target.value)}
                           className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none transition truncate ${
                             hasObs2Conflict
@@ -511,6 +513,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       <td className="border-b border-l border-[#ecece9] px-1 py-1">
                         <select
                           value={r.obs3}
+                          title={r.obs3 || 'اختر المراقب الإضافي'}
                           onChange={(e) => updateRow(r.id, 'obs3', e.target.value)}
                           className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none transition truncate ${
                             hasObs3Conflict
@@ -582,9 +585,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            {reserves.map((res) => (
+            {reserves.map((res, idx) => (
               <span
-                key={res}
+                key={`${res}_${idx}`}
                 className="inline-flex items-center gap-1 rounded-md bg-[#eef3f8] px-2 py-0.5 text-xs font-bold text-[#1f4d78] border border-[#cfcfcb]"
               >
                 <span>{res}</span>

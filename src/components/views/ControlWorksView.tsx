@@ -102,7 +102,7 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
   const handleToggleRowAll = (subjectId: string) => {
     const ch = checklistMap.get(subjectId) || {}
     let allChecked = true
-    for (let i = 0; i < controlStages.length; i++) {
+    for (let i = 1; i <= controlStages.length; i++) {
       if (!ch[i]) {
         allChecked = false
         break
@@ -112,7 +112,7 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
     if (onToggleAllItems) {
       onToggleAllItems(subjectId, nextState)
     } else {
-      for (let i = 0; i < controlStages.length; i++) {
+      for (let i = 1; i <= controlStages.length; i++) {
         if (!!ch[i] !== nextState) {
           onToggleItem(subjectId, i)
         }
@@ -214,7 +214,7 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
                 {/* Dynamic 14 Stages Headers */}
                 {controlStages.map((title, idx) => (
                   <th
-                    key={idx}
+                    key={`stage_h_${idx}_${title}`}
                     className="border-b border-l border-[#cfcfcb] px-1 py-1.5 w-9 cursor-help transition hover:bg-[#dbeafe]"
                     title={title}
                   >
@@ -284,7 +284,7 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
 
                         return (
                           <td
-                            key={stageIdx}
+                            key={`stage_c_${s.id}_${stageNumber}`}
                             className="border-b border-l border-[#ecece9] px-1 py-1"
                           >
                             <button

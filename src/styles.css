@@ -107,6 +107,7 @@ select {
 
   thead {
     display: table-header-group !important;
+    position: static !important;
   }
 
   tfoot {

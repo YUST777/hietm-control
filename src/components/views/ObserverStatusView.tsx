@@ -87,6 +87,14 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
           }
         })
       }
+      if (slot.reserves) {
+        slot.reserves.forEach((resName) => {
+          if (resName) {
+            const cur = counts.get(resName) || { slots: 0, hours: 0 }
+            counts.set(resName, { slots: cur.slots + 1, hours: cur.hours + 2 })
+          }
+        })
+      }
     })
 
     return counts
@@ -189,6 +197,7 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
 
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (file && onImportObservers) {
       const reader = new FileReader()
       reader.onload = (event) => {
@@ -369,7 +378,10 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
             <p>{branding.headerLine2 || branding.instituteName || 'المعهد العالي للهندسة والتكنولوجيا'}</p>
             <p>{branding.headerLine3 || 'إدارة الكنترول والجداول الامتحانية'}</p>
           </div>
-          <div className="text-center">
+          <div className="flex flex-col items-center justify-center text-center">
+            {branding.logoUrl && (
+              <img src={branding.logoUrl} alt="Logo" className="h-11 w-auto object-contain mb-1" />
+            )}
             <h2 className="text-sm font-black underline">تقرير توزيع الأعباء وحالة المراقبين والملاحظين</h2>
             <p className="text-[11px] font-bold mt-0.5">العام الجامعي: {currentYear}</p>
           </div>
@@ -437,9 +449,9 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
                       <td className="border-b border-l border-[#ecece9] px-3 py-1.5 text-right font-black text-[#171717]">
                         <div className="flex items-center gap-1.5">
                           <span>{o.name}</span>
-                          {o.days && (
+                          {o.days && o.days.trim() && (
                             <span className="rounded bg-[#f0f0ee] px-1.5 py-0.2 text-[9.5px] font-semibold text-[#666]">
-                              ({o.days.split(',').length} أيام)
+                              ({o.days.split(',').map((d) => d.trim()).filter(Boolean).length} أيام)
                             </span>
                           )}
                         </div>
@@ -545,7 +557,7 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
       )}
 
       {/* Official Signatures Footer (Printable) */}
-      <div className="mt-2 hidden print:flex items-center justify-between border-t border-black pt-3 px-4 text-center text-xs font-black text-black">
+      <div className="mt-2 hidden print:flex items-center justify-between border-t border-black pt-3 px-4 text-center text-xs font-black text-black print-avoid-break">
         <div>
           <p>{signatures.sigTablesRole || 'رئيس لجنة الجداول'}:</p>
           <p className="mt-1 font-bold">{signatures.sigTables || 'د. حياه سامي على احمد'}</p>

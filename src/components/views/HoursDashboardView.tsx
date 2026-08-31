@@ -223,7 +223,7 @@ export const HoursDashboardView: React.FC<HoursDashboardViewProps> = ({
             <tbody className="divide-y divide-[#ecece9]">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-xs font-bold text-[#888]">
+                  <td colSpan={7} className="py-8 text-center text-xs font-bold text-[#888]">
                     لا توجد بيانات مطابقة للبحث أو الفلتر المحدد.
                   </td>
                 </tr>

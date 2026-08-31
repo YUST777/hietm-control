@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useControlStore } from './lib/store'
 import type {
   MainTab,
@@ -200,13 +200,6 @@ export function App() {
   const [activeMainTab, setActiveMainTab] = useState<MainTab>('proctoring')
   // Active Sub-Tab under Proctoring & Exam Tables
   const [activeProctoringTab, setActiveProctoringTab] = useState<ProctoringSubTab>('schedule')
-
-  // Auto-sync status feedback on sync complete
-  useEffect(() => {
-    if (syncStatus === 'synced' && lastSyncTime) {
-      // Optional subtle indicator
-    }
-  }, [syncStatus, lastSyncTime])
 
   return (
     <main

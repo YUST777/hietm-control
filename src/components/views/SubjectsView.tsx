@@ -81,6 +81,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
 
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (file && onImportSubjects) {
       const reader = new FileReader()
       reader.onload = (event) => {

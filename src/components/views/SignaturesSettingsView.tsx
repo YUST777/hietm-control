@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { PrintSignatures, SystemBranding } from '../../types/control'
 import {
   Save,
@@ -164,6 +164,7 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
   // Handle Logo Upload (Base64)
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
         alert('حجم الصورة كبير جداً، يرجى اختيار صورة أقل من 2 ميجابايت')
@@ -182,6 +183,7 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
   // Handle Import JSON Backup File
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (file && onImportBackup) {
       const reader = new FileReader()
       reader.onload = (event) => {
@@ -198,6 +200,32 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
       reader.readAsText(file)
     }
   }
+
+  // Synchronize when parent signatures/branding/controlStages change (e.g. cloud sync or backup import)
+  useEffect(() => {
+    setSigTables(signatures.sigTables)
+    setSigSystem(signatures.sigSystem)
+    setSigDean(signatures.sigDean)
+    setSigTablesRole(signatures.sigTablesRole || 'رئيس لجنة الجداول')
+    setSigSystemRole(signatures.sigSystemRole || 'مدير النظام ورئيس الكنترول')
+    setSigDeanRole(signatures.sigDeanRole || 'عميد المعهد')
+    if (signatures.printNotice) setPrintNotice(signatures.printNotice)
+  }, [signatures])
+
+  useEffect(() => {
+    setAppName(branding.appName)
+    setInstituteName(branding.instituteName)
+    setBadgeText(branding.badgeText)
+    setLogoUrl(branding.logoUrl || '')
+    setPrimaryColor(branding.primaryColor || '#1f4d78')
+    setHeaderLine1(branding.headerLine1 || 'وزارة التعليم العالي')
+    setHeaderLine2(branding.headerLine2 || branding.instituteName || 'المعهد العالي للهندسة والتكنولوجيا')
+    setHeaderLine3(branding.headerLine3 || 'إدارة الكنترول والجداول الامتحانية')
+  }, [branding])
+
+  useEffect(() => {
+    setEditableStages(controlStages)
+  }, [controlStages])
 
   const handleAddYear = () => {
     if (newYearInput.trim() && onAddAcademicYear) {

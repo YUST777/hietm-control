@@ -86,6 +86,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               {branding.badgeText || 'H.I.E.T'}
             </span>
+            <a
+              href="https://www.yust.dev/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden md:inline-flex items-center gap-1 rounded-full bg-[#0f172a] px-2 py-0.5 text-[9.5px] font-bold text-white hover:bg-[#38bdf8] hover:text-[#0f172a] transition shadow-2xs cursor-pointer"
+              title="تم التطوير بواسطة المهندس يوسف (yust.dev)"
+            >
+              <span className="text-[#38bdf8]">⚡</span>
+              <span>Dev: Yousef</span>
+            </a>
           </div>
           <p className="text-[11px] font-semibold text-[#666]">
             {branding.instituteName || 'المعهد العالي للهندسة والتكنولوجيا — إدارة الجداول والامتحانات'}

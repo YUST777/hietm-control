@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useControlStore } from './lib/store'
-import type { MainTab, ProctoringSubTab, ScheduleSlot, PrintSignatures, Observer, Subject, Committee } from './types/control'
+import type { MainTab, ProctoringSubTab, ScheduleSlot, PrintSignatures, SystemBranding, Observer, Subject, Committee } from './types/control'
 import { Navbar } from './components/Navbar'
 import { NavigationTabs } from './components/NavigationTabs'
 import { HoursDashboardView } from './components/views/HoursDashboardView'
@@ -38,6 +38,9 @@ export function App() {
 
     signatures,
     updateSignatures,
+
+    branding,
+    updateBranding,
 
     academicYears,
     currentYear,
@@ -123,6 +126,11 @@ export function App() {
     showToast('تم حفظ واعتماد التوقيعات الرسمية بنجاح ✓')
   }
 
+  const handleSaveBranding = (newBranding: SystemBranding) => {
+    updateBranding(newBranding)
+    showToast('تم حفظ وتحديث هوية المعهد والألوان بنجاح ✓')
+  }
+
   // Zoom level state - default to 75% for wide overview without scroll
   const [zoomLevel, setZoomLevel] = useState<number>(() => {
     try {
@@ -161,6 +169,7 @@ export function App() {
         setZoomLevel={setZoomLevel}
         syncStatus={syncStatus}
         lastSyncTime={lastSyncTime}
+        branding={branding}
         onManualSync={async () => {
           await manualSync()
           showToast('تمت مزامنة البيانات مع قاعدة البيانات السحابية 🔄')
@@ -261,7 +270,9 @@ export function App() {
         {activeMainTab === 'settings' && (
           <SignaturesSettingsView
             signatures={signatures}
+            branding={branding}
             onSaveSignatures={handleSaveSignatures}
+            onSaveBranding={handleSaveBranding}
           />
         )}
       </div>

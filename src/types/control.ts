@@ -71,6 +71,14 @@ export interface PrintSignatures {
   sigDean: string
 }
 
+export interface SystemBranding {
+  appName: string
+  instituteName: string
+  badgeText: string
+  logoUrl?: string
+  primaryColor: string
+}
+
 export type MainTab = 'proctoring' | 'subjects' | 'control' | 'settings'
 
 export type ProctoringSubTab = 'hours' | 'schedule' | 'days' | 'committees' | 'attendance' | 'status'

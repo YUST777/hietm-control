@@ -7,6 +7,7 @@ import type {
   DailyAttendanceRecord,
   ControlWorkSubject,
   PrintSignatures,
+  SystemBranding,
 } from '../types/control'
 import {
   INITIAL_OBSERVERS,
@@ -25,6 +26,15 @@ const STORAGE_KEYS = {
   CONTROL_WORKS: 'hietm_local_works_v3',
   SIGNATURES: 'hietm_local_signatures_v3',
   CURRENT_YEAR: 'hietm_local_year_v3',
+  BRANDING: 'hietm_local_branding_v3',
+}
+
+export const DEFAULT_BRANDING: SystemBranding = {
+  appName: 'وحدة التعليم الإلكتروني — الكنترول وتوزيع المراقبات',
+  instituteName: 'المعهد العالي للهندسة والتكنولوجيا — إدارة الجداول والامتحانات',
+  badgeText: 'H.I.E.T',
+  logoUrl: '',
+  primaryColor: '#1f4d78',
 }
 
 function loadLocal<T>(key: string, fallback: T): T {
@@ -75,6 +85,9 @@ export function useControlStore() {
   const [signatures, setSignatures] = useState<PrintSignatures>(() =>
     loadLocal(STORAGE_KEYS.SIGNATURES, { ...INITIAL_SIGNATURES })
   )
+  const [branding, setBranding] = useState<SystemBranding>(() =>
+    loadLocal(STORAGE_KEYS.BRANDING, { ...DEFAULT_BRANDING })
+  )
   const [academicYears, setAcademicYears] = useState<string[]>([...INITIAL_ACADEMIC_YEARS])
   const [currentYear, setCurrentYearState] = useState<string>(() =>
     loadLocal(STORAGE_KEYS.CURRENT_YEAR, INITIAL_ACADEMIC_YEARS[0] || '2024 - 2025')
@@ -82,6 +95,14 @@ export function useControlStore() {
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced')
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null)
+
+  // Apply primary color variable to CSS dynamically
+  useEffect(() => {
+    try {
+      const color = branding.primaryColor || '#1f4d78'
+      document.documentElement.style.setProperty('--primary-color', color)
+    } catch {}
+  }, [branding.primaryColor])
 
   // Refs to avoid unnecessary effect triggers
   const stateRef = useRef({
@@ -91,6 +112,7 @@ export function useControlStore() {
     schedules,
     controlWorks,
     signatures,
+    branding,
     currentYear,
   })
 
@@ -103,9 +125,10 @@ export function useControlStore() {
       schedules,
       controlWorks,
       signatures,
+      branding,
       currentYear,
     }
-  }, [observers, subjects, committees, schedules, controlWorks, signatures, currentYear])
+  }, [observers, subjects, committees, schedules, controlWorks, signatures, branding, currentYear])
 
   const isSyncingRef = useRef(false)
   const debounceTimerRef = useRef<any>(null)
@@ -119,6 +142,7 @@ export function useControlStore() {
   useEffect(() => saveLocal(STORAGE_KEYS.ATTENDANCE, attendance), [attendance])
   useEffect(() => saveLocal(STORAGE_KEYS.CONTROL_WORKS, controlWorks), [controlWorks])
   useEffect(() => saveLocal(STORAGE_KEYS.SIGNATURES, signatures), [signatures])
+  useEffect(() => saveLocal(STORAGE_KEYS.BRANDING, branding), [branding])
   useEffect(() => saveLocal(STORAGE_KEYS.CURRENT_YEAR, currentYear), [currentYear])
 
   // Push latest stateRef to cloud
@@ -183,6 +207,7 @@ export function useControlStore() {
         if (d.schedules && d.schedules.length > 0) setSchedules(d.schedules)
         if (d.controlWorks && d.controlWorks.length > 0) setControlWorks(d.controlWorks)
         if (d.signatures) setSignatures(d.signatures)
+        if (d.branding) setBranding(d.branding)
         if (d.academicYears) setAcademicYears(d.academicYears)
         if (d.currentYear) setCurrentYearState(d.currentYear)
       }
@@ -323,6 +348,11 @@ export function useControlStore() {
     queuePush()
   }
 
+  const updateBranding = (updates: Partial<SystemBranding>) => {
+    setBranding((prev) => ({ ...prev, ...updates }))
+    queuePush()
+  }
+
   const updateCurrentYear = (year: string) => {
     setCurrentYearState(year)
     queuePush()
@@ -339,6 +369,7 @@ export function useControlStore() {
       setAttendance([])
       setControlWorks([])
       setSignatures({ ...INITIAL_SIGNATURES })
+      setBranding({ ...DEFAULT_BRANDING })
       setCurrentYearState(INITIAL_ACADEMIC_YEARS[0] || '2024 - 2025')
       queuePush()
     }
@@ -355,6 +386,7 @@ export function useControlStore() {
       attendance,
       controlWorks,
       signatures,
+      branding,
       currentYear,
     }
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
@@ -401,6 +433,10 @@ export function useControlStore() {
     signatures,
     setSignatures,
     updateSignatures,
+
+    branding,
+    setBranding,
+    updateBranding,
 
     academicYears,
     currentYear,

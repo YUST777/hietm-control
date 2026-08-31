@@ -14,6 +14,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import type { SyncStatus } from '../lib/store'
+import type { SystemBranding } from '../types/control'
 
 interface NavbarProps {
   currentYear: string
@@ -26,6 +27,7 @@ interface NavbarProps {
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>
   syncStatus: SyncStatus
   lastSyncTime: string | null
+  branding: SystemBranding
   onManualSync: () => void
   onReset: () => void
   onExport: () => void
@@ -43,6 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setZoomLevel,
   syncStatus,
   lastSyncTime,
+  branding,
   onManualSync,
   onReset,
   onExport,
@@ -56,24 +59,36 @@ export const Navbar: React.FC<NavbarProps> = ({
     setZoomLevel((prev) => Math.max(0.5, parseFloat((prev - 0.05).toFixed(2))))
   }
 
+  const primaryColor = branding.primaryColor || '#1f4d78'
+
   return (
     <header className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-[#dededb] bg-white px-4 py-2 shadow-sm print-hide">
-      {/* Brand & Crest */}
+      {/* Brand & Crest / Custom Logo */}
       <div className="flex items-center gap-2.5">
-        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#1f4d78] text-white shadow-sm">
-          <Building2 className="size-5" />
+        <div
+          className="grid size-9 shrink-0 place-items-center rounded-xl text-white shadow-sm overflow-hidden"
+          style={{ backgroundColor: primaryColor }}
+        >
+          {branding.logoUrl ? (
+            <img src={branding.logoUrl} alt="Logo" className="size-full object-contain p-0.5" />
+          ) : (
+            <Building2 className="size-5" />
+          )}
         </div>
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-black text-[#171717]">
-              وحدة التعليم الإلكتروني — الكنترول وتوزيع المراقبات
+              {branding.appName || 'وحدة التعليم الإلكتروني — الكنترول وتوزيع المراقبات'}
             </h1>
-            <span className="rounded-md bg-[#eef3f8] px-1.5 py-0.2 text-[10px] font-bold text-[#1f4d78]">
-              H.I.E.T
+            <span
+              className="rounded-md px-1.5 py-0.2 text-[10px] font-bold"
+              style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+            >
+              {branding.badgeText || 'H.I.E.T'}
             </span>
           </div>
           <p className="text-[11px] font-semibold text-[#666]">
-            المعهد العالي للهندسة والتكنولوجيا — إدارة الجداول والامتحانات
+            {branding.instituteName || 'المعهد العالي للهندسة والتكنولوجيا — إدارة الجداول والامتحانات'}
           </p>
         </div>
       </div>
@@ -81,19 +96,19 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* KPI Badges */}
       <div className="hidden lg:flex items-center gap-2.5">
         <div className="flex items-center gap-1 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-2 py-0.5 text-[11px] font-bold text-[#334155]">
-          <Users className="size-3 text-[#1f4d78]" />
+          <Users className="size-3" style={{ color: primaryColor }} />
           <span>المراقبين:</span>
-          <span className="text-[#1f4d78] font-black">{totalObservers}</span>
+          <span className="font-black" style={{ color: primaryColor }}>{totalObservers}</span>
         </div>
         <div className="flex items-center gap-1 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-2 py-0.5 text-[11px] font-bold text-[#334155]">
-          <BookOpen className="size-3 text-[#1f4d78]" />
+          <BookOpen className="size-3" style={{ color: primaryColor }} />
           <span>المقررات:</span>
-          <span className="text-[#1f4d78] font-black">{totalSubjects}</span>
+          <span className="font-black" style={{ color: primaryColor }}>{totalSubjects}</span>
         </div>
         <div className="flex items-center gap-1 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-2 py-0.5 text-[11px] font-bold text-[#334155]">
-          <Building2 className="size-3 text-[#1f4d78]" />
+          <Building2 className="size-3" style={{ color: primaryColor }} />
           <span>اللجان:</span>
-          <span className="text-[#1f4d78] font-black">{totalCommittees}</span>
+          <span className="font-black" style={{ color: primaryColor }}>{totalCommittees}</span>
         </div>
       </div>
 
@@ -155,9 +170,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setZoomLevel(lvl)}
               className={`rounded-md px-1.5 py-0.5 text-[10.5px] font-black transition tabular-nums ${
                 Math.round(zoomLevel * 100) === Math.round(lvl * 100)
-                  ? 'bg-[#1f4d78] text-white shadow-xs'
+                  ? 'text-white shadow-xs'
                   : 'text-[#555] hover:bg-[#e6e6e3]'
               }`}
+              style={{
+                backgroundColor:
+                  Math.round(zoomLevel * 100) === Math.round(lvl * 100)
+                    ? primaryColor
+                    : 'transparent',
+              }}
             >
               {Math.round(lvl * 100)}%
             </button>
@@ -193,7 +214,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           type="button"
           onClick={onPrint}
-          className="flex items-center gap-1 rounded-xl bg-[#1f4d78] px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-[#163756] transition"
+          className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:opacity-90 transition"
+          style={{ backgroundColor: primaryColor }}
         >
           <Printer className="size-3.5" />
           <span>طباعة</span>

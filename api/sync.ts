@@ -98,6 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             checklist: c.checklist || {},
           })),
           signatures: settingsMap['signatures'] || null,
+          branding: settingsMap['branding'] || null,
           academicYears: settingsMap['academic_years'] || null,
           currentYear: settingsMap['current_year'] || null,
         },
@@ -213,13 +214,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      // 6. Sync Settings
+      // 6. Sync Signatures & Settings
       if (payload.signatures) {
         await client.query(
           `INSERT INTO public.system_settings (key, value, updated_at)
            VALUES ('signatures', $1, NOW())
            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
           [JSON.stringify(payload.signatures)]
+        )
+      }
+
+      if (payload.branding) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('branding', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.branding)]
         )
       }
 

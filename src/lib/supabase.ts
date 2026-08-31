@@ -8,7 +8,7 @@ export interface SupabaseConfig {
 const STORAGE_KEY_SUPABASE_CONFIG = 'hietm_supabase_config_v1'
 
 // Default environment variables if provided at build/deploy time
-const ENV_URL = import.meta.env.VITE_SUPABASE_URL || ''
+const ENV_URL = import.meta.env.VITE_SUPABASE_URL || 'https://tuxsmmjbvutlzrpwgkbs.supabase.co'
 const ENV_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 export function getSavedSupabaseConfig(): SupabaseConfig {

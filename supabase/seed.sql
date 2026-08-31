@@ -378,5 +378,5 @@ INSERT INTO public.committees (id, room_num, hall_name, floor, capacity) VALUES 
 -- 4. Signatures & Academic Years
 INSERT INTO public.system_settings (key, value) VALUES ('signatures', '{"sigSystem": "\u0623.\u0645.\u062f. \u0639\u0644\u064a \u0633\u0645\u064a\u0631 \u0639\u0648\u0636", "sigTables": "\u062f. \u062d\u064a\u0627\u0647 \u0633\u0627\u0645\u064a \u0639\u0644\u0649 \u0627\u062d\u0645\u062f", "sigDean": "\u0623.\u062f. \u0631\u062c\u0628 \u0639\u0628\u062f \u0627\u0644\u0639\u0632\u064a\u0632 \u0627\u0644\u0633\u062d\u064a\u0645\u064a"}'::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 INSERT INTO public.system_settings (key, value) VALUES ('academic_years', '["2024 - 2025", "2025 - 2026", "2026 - 2027"]'::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
-INSERT INTO public.system_settings (key, value) VALUES ('current_year', '2024 - 2025'::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+INSERT INTO public.system_settings (key, value) VALUES ('current_year', '"2024 - 2025"'::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 COMMIT;

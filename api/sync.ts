@@ -233,6 +233,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         )
       }
 
+      if (Array.isArray(payload.academicYears)) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('academic_years', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.academicYears)]
+        )
+      }
+
       if (payload.currentYear) {
         await client.query(
           `INSERT INTO public.system_settings (key, value, updated_at)

@@ -26,6 +26,7 @@ const STORAGE_KEYS = {
   CONTROL_WORKS: 'hietm_local_works_v3',
   SIGNATURES: 'hietm_local_signatures_v3',
   CURRENT_YEAR: 'hietm_local_year_v3',
+  ACADEMIC_YEARS: 'hietm_local_academic_years_v3',
   BRANDING: 'hietm_local_branding_v3',
 }
 
@@ -88,7 +89,9 @@ export function useControlStore() {
   const [branding, setBranding] = useState<SystemBranding>(() =>
     loadLocal(STORAGE_KEYS.BRANDING, { ...DEFAULT_BRANDING })
   )
-  const [academicYears, setAcademicYears] = useState<string[]>([...INITIAL_ACADEMIC_YEARS])
+  const [academicYears, setAcademicYears] = useState<string[]>(() =>
+    loadLocal(STORAGE_KEYS.ACADEMIC_YEARS, [...INITIAL_ACADEMIC_YEARS])
+  )
   const [currentYear, setCurrentYearState] = useState<string>(() =>
     loadLocal(STORAGE_KEYS.CURRENT_YEAR, INITIAL_ACADEMIC_YEARS[0] || '2024 - 2025')
   )
@@ -113,6 +116,7 @@ export function useControlStore() {
     controlWorks,
     signatures,
     branding,
+    academicYears,
     currentYear,
   })
 
@@ -126,9 +130,10 @@ export function useControlStore() {
       controlWorks,
       signatures,
       branding,
+      academicYears,
       currentYear,
     }
-  }, [observers, subjects, committees, schedules, controlWorks, signatures, branding, currentYear])
+  }, [observers, subjects, committees, schedules, controlWorks, signatures, branding, academicYears, currentYear])
 
   const isSyncingRef = useRef(false)
   const debounceTimerRef = useRef<any>(null)
@@ -143,6 +148,7 @@ export function useControlStore() {
   useEffect(() => saveLocal(STORAGE_KEYS.CONTROL_WORKS, controlWorks), [controlWorks])
   useEffect(() => saveLocal(STORAGE_KEYS.SIGNATURES, signatures), [signatures])
   useEffect(() => saveLocal(STORAGE_KEYS.BRANDING, branding), [branding])
+  useEffect(() => saveLocal(STORAGE_KEYS.ACADEMIC_YEARS, academicYears), [academicYears])
   useEffect(() => saveLocal(STORAGE_KEYS.CURRENT_YEAR, currentYear), [currentYear])
 
   // Push latest stateRef to cloud
@@ -208,7 +214,7 @@ export function useControlStore() {
         if (d.controlWorks && d.controlWorks.length > 0) setControlWorks(d.controlWorks)
         if (d.signatures) setSignatures(d.signatures)
         if (d.branding) setBranding(d.branding)
-        if (d.academicYears) setAcademicYears(d.academicYears)
+        if (d.academicYears && d.academicYears.length > 0) setAcademicYears(d.academicYears)
         if (d.currentYear) setCurrentYearState(d.currentYear)
       }
 
@@ -358,6 +364,23 @@ export function useControlStore() {
     queuePush()
   }
 
+  const addAcademicYear = (year: string) => {
+    if (!academicYears.includes(year)) {
+      setAcademicYears((prev) => [...prev, year])
+      queuePush()
+    }
+  }
+
+  const deleteAcademicYear = (year: string) => {
+    if (academicYears.length <= 1) return
+    const remaining = academicYears.filter((y) => y !== year)
+    setAcademicYears(remaining)
+    if (currentYear === year) {
+      setCurrentYearState(remaining[0] || '')
+    }
+    queuePush()
+  }
+
   // Reset to original faculty defaults
   const resetToDefaults = () => {
     if (window.confirm('هل تريد استعادة جميع بيانات النظام الأصلية المعتمدة؟')) {
@@ -370,6 +393,7 @@ export function useControlStore() {
       setControlWorks([])
       setSignatures({ ...INITIAL_SIGNATURES })
       setBranding({ ...DEFAULT_BRANDING })
+      setAcademicYears([...INITIAL_ACADEMIC_YEARS])
       setCurrentYearState(INITIAL_ACADEMIC_YEARS[0] || '2024 - 2025')
       queuePush()
     }
@@ -387,6 +411,7 @@ export function useControlStore() {
       controlWorks,
       signatures,
       branding,
+      academicYears,
       currentYear,
     }
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
@@ -439,6 +464,8 @@ export function useControlStore() {
     updateBranding,
 
     academicYears,
+    addAcademicYear,
+    deleteAcademicYear,
     currentYear,
     setCurrentYear: updateCurrentYear,
 

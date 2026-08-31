@@ -1,12 +1,28 @@
 import React, { useState } from 'react'
 import type { PrintSignatures, SystemBranding } from '../../types/control'
-import { Save, UserCog, Palette, Building2, Upload, Trash2, Check, Sparkles } from 'lucide-react'
+import {
+  Save,
+  UserCog,
+  Palette,
+  Building2,
+  Upload,
+  Trash2,
+  Check,
+  Sparkles,
+  Calendar,
+  Plus,
+} from 'lucide-react'
 
 interface SettingsViewProps {
   signatures: PrintSignatures
   branding: SystemBranding
+  academicYears: string[]
+  currentYear: string
   onSaveSignatures: (sigs: PrintSignatures) => void
   onSaveBranding: (branding: SystemBranding) => void
+  onAddAcademicYear?: (year: string) => void
+  onDeleteAcademicYear?: (year: string) => void
+  onSetCurrentYear?: (year: string) => void
 }
 
 const COLOR_PRESETS = [
@@ -21,8 +37,13 @@ const COLOR_PRESETS = [
 export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
   signatures,
   branding,
+  academicYears,
+  currentYear,
   onSaveSignatures,
   onSaveBranding,
+  onAddAcademicYear,
+  onDeleteAcademicYear,
+  onSetCurrentYear,
 }) => {
   // Signatures State
   const [sigTables, setSigTables] = useState(signatures.sigTables)
@@ -35,6 +56,9 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
   const [badgeText, setBadgeText] = useState(branding.badgeText)
   const [logoUrl, setLogoUrl] = useState(branding.logoUrl || '')
   const [primaryColor, setPrimaryColor] = useState(branding.primaryColor || '#1f4d78')
+
+  // Academic Year State
+  const [newYearInput, setNewYearInput] = useState('')
 
   // Handle Logo Upload (Base64)
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,6 +75,13 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
         }
       }
       reader.readAsDataURL(file)
+    }
+  }
+
+  const handleAddYear = () => {
+    if (newYearInput.trim() && onAddAcademicYear) {
+      onAddAcademicYear(newYearInput.trim())
+      setNewYearInput('')
     }
   }
 
@@ -308,6 +339,78 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                 onChange={(e) => setSigDean(e.target.value)}
                 className="h-8.5 w-full rounded-lg border border-[#cfcfcb] px-2.5 text-xs font-bold text-[#171717] outline-none focus:border-[#1f4d78]"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Section 3: Academic Years Management */}
+        <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
+            <div
+              className="grid size-9 place-items-center rounded-xl text-white shadow-xs"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <Calendar className="size-4.5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-[#171717]">إدارة الأعوام الجامعية المعتمدة</h2>
+              <p className="text-[11px] font-semibold text-[#777]">
+                إضافة وحذف وتعيين العام الجامعي النشط حالياً في النظام
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold">
+            {/* List of Years */}
+            <div className="flex flex-wrap items-center gap-2">
+              {academicYears.map((y) => (
+                <div
+                  key={y}
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 transition ${
+                    y === currentYear
+                      ? 'border-[#1f4d78] bg-[#eef3f8] text-[#1f4d78] ring-1 ring-[#1f4d78]'
+                      : 'border-[#cfcfcb] bg-[#fafaf8] text-[#333]'
+                  }`}
+                >
+                  <span
+                    onClick={() => onSetCurrentYear && onSetCurrentYear(y)}
+                    className="cursor-pointer font-black"
+                    title="تعيين كعام نشط"
+                  >
+                    {y} {y === currentYear && '(النشط حالياً)'}
+                  </span>
+                  {academicYears.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteAcademicYear && onDeleteAcademicYear(y)}
+                      className="rounded-full text-[#aaa] hover:bg-[#fee2e2] hover:text-[#c5221f] p-0.5 transition"
+                      title="حذف هذا العام"
+                    >
+                      <Trash2 className="size-3" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Add New Academic Year */}
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                placeholder="مثال: 2026 - 2027"
+                value={newYearInput}
+                onChange={(e) => setNewYearInput(e.target.value)}
+                className="h-8 w-36 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold outline-none focus:border-[#1f4d78]"
+              />
+              <button
+                type="button"
+                onClick={handleAddYear}
+                disabled={!newYearInput.trim()}
+                className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition"
+              >
+                <Plus className="size-3.5" />
+                <span>إضافة عام</span>
+              </button>
             </div>
           </div>
         </div>

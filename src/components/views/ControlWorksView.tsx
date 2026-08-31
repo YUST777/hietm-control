@@ -1,11 +1,15 @@
 import React, { useState, useMemo } from 'react'
 import type { Subject, ControlWorkSubject } from '../../types/control'
-import { CheckSquare, Search } from 'lucide-react'
+import { CheckSquare, Search, Plus, Edit3, CheckCheck, X, Sparkles } from 'lucide-react'
+import { EditSubjectModal } from '../modals/EditSubjectModal'
 
 interface ControlWorksViewProps {
   subjects: Subject[]
   controlWorks: ControlWorkSubject[]
   onToggleItem: (subjectId: string, itemIndex: number) => void
+  onToggleAllItems?: (subjectId: string, setAll: boolean) => void
+  onUpdateSubject: (id: string, updates: Partial<Subject>) => void
+  onAddSubject: (s: Omit<Subject, 'id'>) => void
 }
 
 const CONTROL_STAGES = [
@@ -29,9 +33,15 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
   subjects,
   controlWorks,
   onToggleItem,
+  onUpdateSubject,
+  onAddSubject,
 }) => {
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('ALL')
+
+  // Subject Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedSubjectToEdit, setSelectedSubjectToEdit] = useState<Subject | null>(null)
 
   // Map checklist state
   const checklistMap = useMemo(() => {
@@ -53,9 +63,9 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
     })
   }, [subjects, search, deptFilter])
 
-  // Institute overall completion rate
+  // Overall completion rate
   const overallRate = useMemo(() => {
-    let totalItems = subjects.length * 14
+    const totalItems = subjects.length * 14
     if (totalItems === 0) return 0
     let completed = 0
     subjects.forEach((s) => {
@@ -66,6 +76,35 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
     })
     return ((completed / totalItems) * 100).toFixed(1)
   }, [subjects, checklistMap])
+
+  const handleOpenAddModal = () => {
+    setSelectedSubjectToEdit(null)
+    setIsModalOpen(true)
+  }
+
+  const handleOpenEditModal = (s: Subject) => {
+    setSelectedSubjectToEdit(s)
+    setIsModalOpen(true)
+  }
+
+  const handleSaveModal = (subjData: Omit<Subject, 'id'>, id?: string) => {
+    if (id) {
+      onUpdateSubject(id, subjData)
+    } else {
+      onAddSubject(subjData)
+    }
+  }
+
+  // Toggle all 14 items for a single subject
+  const handleToggleRowAll = (subjectId: string, makeAllDone: boolean) => {
+    for (let i = 1; i <= 14; i++) {
+      const chk = checklistMap.get(subjectId) || {}
+      const currentlyDone = !!chk[i]
+      if (makeAllDone !== currentlyDone) {
+        onToggleItem(subjectId, i)
+      }
+    }
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2.5">
@@ -85,7 +124,7 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           <div className="text-left">
             <span className="text-[9px] font-bold text-[#777] uppercase">نسبة الإنجاز الكلي</span>
             <p className="text-base font-black text-[#155724] tabular-nums">{overallRate}%</p>
@@ -96,6 +135,14 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
               style={{ width: `${overallRate}%` }}
             />
           </div>
+          <button
+            type="button"
+            onClick={handleOpenAddModal}
+            className="flex items-center gap-1.5 rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-black text-white shadow-xs hover:bg-[#163756] transition"
+          >
+            <Plus className="size-3.5" />
+            <span>إضافة مقرر</span>
+          </button>
         </div>
       </div>
 
@@ -116,7 +163,7 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
           <select
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
-            className="h-7 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none"
+            className="h-7 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none cursor-pointer"
           >
             <option value="ALL">جميع الأقسام</option>
             <option value="قسم العلوم الأساسية">قسم العلوم الأساسية</option>
@@ -124,6 +171,11 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
             <option value="قسم الهندسة المدنية">قسم الهندسة المدنية</option>
             <option value="قسم الهندسة الكهربية">قسم الهندسة الكهربية</option>
           </select>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-bold text-[#555]">
+          <Sparkles className="size-3.5 text-[#1f4d78]" />
+          <span>انقر على أي خلية لتبديل حالة الإنجاز فورياً</span>
         </div>
       </div>
 
@@ -134,8 +186,8 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
             <thead className="sticky top-0 z-10 bg-[#eef3f8]">
               <tr className="text-[10px] font-black text-[#171717]">
                 <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-10">م</th>
-                <th className="border-b border-l border-[#cfcfcb] px-3 py-1.5 text-right min-w-36">
-                  المقرر الدراسي
+                <th className="border-b border-l border-[#cfcfcb] px-3 py-1.5 text-right min-w-44">
+                  المقرر الدراسي (انقر للتعديل)
                 </th>
                 <th className="border-b border-l border-[#cfcfcb] px-1 py-1.5 w-14">الفرقة</th>
                 {CONTROL_STAGES.map((stg, i) => (
@@ -147,7 +199,8 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
                     {stg}
                   </th>
                 ))}
-                <th className="border-b border-[#cfcfcb] px-2 py-1.5 w-14">الإنجاز</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-14">الإنجاز</th>
+                <th className="border-b border-[#cfcfcb] px-1.5 py-1.5 w-16">إجراء</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#ecece9]">
@@ -158,17 +211,30 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
                   if (chk[i]) count++
                 }
                 const pct = Math.round((count / 14) * 100)
+                const isAllDone = count === 14
+
                 return (
-                  <tr key={s.id} className="hover:bg-[#fbfbfa] transition">
+                  <tr key={s.id} className="hover:bg-[#fbfbfa] transition group">
                     <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#888]">
                       {idx + 1}
                     </td>
+
+                    {/* Subject Name with Quick Edit */}
                     <td className="border-b border-l border-[#ecece9] px-3 py-1 text-right font-bold text-[#171717]">
-                      {s.name} ({s.code})
+                      <div
+                        onClick={() => handleOpenEditModal(s)}
+                        className="cursor-pointer hover:text-[#1f4d78] hover:underline flex items-center justify-between gap-1"
+                        title="انقر لتعديل بيانات المقرر"
+                      >
+                        <span>{s.name} ({s.code})</span>
+                        <Edit3 className="size-3 text-[#aaa] opacity-0 group-hover:opacity-100 transition" />
+                      </div>
                     </td>
+
                     <td className="border-b border-l border-[#ecece9] px-1 py-1 font-semibold text-[#666]">
                       {s.year}
                     </td>
+
                     {CONTROL_STAGES.map((_, i) => {
                       const itemIdx = i + 1
                       const done = !!chk[itemIdx]
@@ -179,6 +245,7 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
                           className={`border-b border-l border-[#ecece9] px-1 py-1 cursor-pointer transition ${
                             done ? 'bg-[#f0fdf4] text-[#155724]' : 'hover:bg-[#f5f5f3]'
                           }`}
+                          title={`تبديل حالة: ${CONTROL_STAGES[i]}`}
                         >
                           <input
                             type="checkbox"
@@ -189,7 +256,9 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
                         </td>
                       )
                     })}
-                    <td className="border-b border-[#ecece9] px-1 py-1 font-bold text-[11px] tabular-nums">
+
+                    {/* Progress Badge */}
+                    <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[11px] tabular-nums">
                       <span
                         className={`rounded px-1.5 py-0.5 text-[9px] ${
                           pct === 100
@@ -202,6 +271,32 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
                         {pct}%
                       </span>
                     </td>
+
+                    {/* Row Quick Action */}
+                    <td className="border-b border-[#ecece9] px-1 py-1 text-center">
+                      <div className="flex items-center justify-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleRowAll(s.id, !isAllDone)}
+                          className={`rounded p-1 transition ${
+                            isAllDone
+                              ? 'text-[#c5221f] hover:bg-[#fee2e2]'
+                              : 'text-[#15803d] hover:bg-[#dcfce7]'
+                          }`}
+                          title={isAllDone ? 'إلغاء تحديد كل البنود' : 'تحديد كل الـ 14 بند كمكتمل'}
+                        >
+                          {isAllDone ? <X className="size-3" /> : <CheckCheck className="size-3" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(s)}
+                          className="rounded p-1 text-[#1f4d78] hover:bg-[#eef3f8] transition"
+                          title="تعديل المقرر"
+                        >
+                          <Edit3 className="size-3" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 )
               })}
@@ -209,6 +304,14 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Edit / Add Subject Modal */}
+      <EditSubjectModal
+        isOpen={isModalOpen}
+        subject={selectedSubjectToEdit}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveModal}
+      />
     </div>
   )
 }

@@ -58,6 +58,8 @@ export function App() {
     updateBranding,
 
     academicYears,
+    addAcademicYear,
+    deleteAcademicYear,
     currentYear,
     setCurrentYear,
 
@@ -240,6 +242,8 @@ export function App() {
             {activeSubTab === 'days' && (
               <ObserverDaysView
                 observers={observers}
+                onUpdateObserver={handleUpdateObserver}
+                onAddObserver={handleAddObserver}
                 onUpdateObserverDays={(id, days) => {
                   updateObserver(id, { days })
                   showToast('تم تحديث أيام الحضور بنجاح ✓')
@@ -296,6 +300,8 @@ export function App() {
               toggleControlStage(subjId, itemIdx)
               showToast('تم تحديث بند الكنترول بنجاح ✓')
             }}
+            onUpdateSubject={handleUpdateSubject}
+            onAddSubject={handleAddSubject}
           />
         )}
 
@@ -303,8 +309,22 @@ export function App() {
           <SignaturesSettingsView
             signatures={signatures}
             branding={branding}
+            academicYears={academicYears}
+            currentYear={currentYear}
             onSaveSignatures={handleSaveSignatures}
             onSaveBranding={handleSaveBranding}
+            onAddAcademicYear={(year) => {
+              addAcademicYear(year)
+              showToast(`تمت إضافة العام الجامعي "${year}" بنجاح ✓`)
+            }}
+            onDeleteAcademicYear={(year) => {
+              deleteAcademicYear(year)
+              showToast(`تم حذف العام الجامعي "${year}"`, 'info')
+            }}
+            onSetCurrentYear={(year) => {
+              setCurrentYear(year)
+              showToast(`تم تعيين العام الجامعي النشط: "${year}" ✓`)
+            }}
           />
         )}
       </div>

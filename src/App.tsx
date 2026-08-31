@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useControlStore } from './lib/store'
-import type { MainTab, ProctoringSubTab } from './types/control'
+import type { MainTab, ProctoringSubTab, ScheduleSlot, PrintSignatures, Observer, Subject, Committee } from './types/control'
 import { Navbar } from './components/Navbar'
 import { NavigationTabs } from './components/NavigationTabs'
 import { HoursDashboardView } from './components/views/HoursDashboardView'
@@ -10,6 +10,7 @@ import { CommitteesView } from './components/views/CommitteesView'
 import { SubjectsView } from './components/views/SubjectsView'
 import { ControlWorksView } from './components/views/ControlWorksView'
 import { SignaturesSettingsView } from './components/views/SignaturesSettingsView'
+import { ToastContainer, ToastMessage } from './components/Toast'
 
 export function App() {
   const {
@@ -50,6 +51,79 @@ export function App() {
     exportBackup,
   } = useControlStore()
 
+  // Toast state
+  const [toasts, setToasts] = useState<ToastMessage[]>([])
+
+  const showToast = useCallback((text: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+    setToasts((prev) => [...prev, { id, text, type }])
+  }, [])
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }, [])
+
+  // Wrapped Handlers with Toast Feedback
+  const handleUpdateObserver = (id: string, updates: Partial<Observer>) => {
+    updateObserver(id, updates)
+    showToast('تم تحديث بيانات المراقب بنجاح ✓')
+  }
+
+  const handleAddObserver = (obs: Omit<Observer, 'id'>) => {
+    addObserver(obs)
+    showToast(`تمت إضافة المراقب "${obs.name}" بنجاح ✓`)
+  }
+
+  const handleDeleteObserver = (id: string) => {
+    deleteObserver(id)
+    showToast('تم حذف المراقب من قاعدة البيانات', 'info')
+  }
+
+  const handleResetHours = () => {
+    resetAllHours()
+    showToast('تم تصفير عداد الساعات لجميع المراقبين', 'info')
+  }
+
+  const handleUpdateSubject = (id: string, updates: Partial<Subject>) => {
+    updateSubject(id, updates)
+    showToast('تم تحديث بيانات المقرر الدراسي بنجاح ✓')
+  }
+
+  const handleAddSubject = (s: Omit<Subject, 'id'>) => {
+    addSubject(s)
+    showToast(`تمت إضافة المقرر "${s.name}" بنجاح ✓`)
+  }
+
+  const handleDeleteSubject = (id: string) => {
+    deleteSubject(id)
+    showToast('تم حذف المقرر من قاعدة البيانات', 'info')
+  }
+
+  const handleUpdateCommittee = (id: string, updates: Partial<Committee>) => {
+    updateCommittee(id, updates)
+    showToast('تم تحديث بيانات اللجنة بنجاح ✓')
+  }
+
+  const handleAddCommittee = (c: Omit<Committee, 'id'>) => {
+    addCommittee(c)
+    showToast(`تمت إضافة لجنة ${c.roomNum} بنجاح ✓`)
+  }
+
+  const handleDeleteCommittee = (id: string) => {
+    deleteCommittee(id)
+    showToast('تم حذف اللجنة من قاعدة البيانات', 'info')
+  }
+
+  const handleSaveSlot = (slot: ScheduleSlot) => {
+    saveScheduleSlot(slot)
+    showToast('تم حفظ واعتماد جدول توزيع المراقبات بنجاح ✓')
+  }
+
+  const handleSaveSignatures = (sigs: PrintSignatures) => {
+    updateSignatures(sigs)
+    showToast('تم حفظ واعتماد التوقيعات الرسمية بنجاح ✓')
+  }
+
   // Zoom level state - default to 75% for wide overview without scroll
   const [zoomLevel, setZoomLevel] = useState<number>(() => {
     try {
@@ -88,10 +162,23 @@ export function App() {
         setZoomLevel={setZoomLevel}
         connectionStatus={connectionStatus}
         lastSyncTime={lastSyncTime}
-        onRefreshCloud={fetchFromSupabase}
-        onSeedDatabase={seedDatabaseFromDefaults}
-        onReset={resetToDefaults}
-        onExport={exportBackup}
+        onRefreshCloud={() => {
+          fetchFromSupabase()
+          showToast('تمت المزامنة مع قاعدة البيانات السحابية 🔄')
+        }}
+        onSeedDatabase={async () => {
+          const res = await seedDatabaseFromDefaults()
+          showToast(res.message, res.success ? 'success' : 'error')
+          return res
+        }}
+        onReset={() => {
+          resetToDefaults()
+          showToast('تمت استعادة البيانات الأصلية المعتمدة', 'info')
+        }}
+        onExport={() => {
+          exportBackup()
+          showToast('تم تنزيل النسخة الاحتياطية بنجاح 💾')
+        }}
         onPrint={() => window.print()}
       />
 
@@ -110,10 +197,10 @@ export function App() {
             {activeSubTab === 'hours' && (
               <HoursDashboardView
                 observers={observers}
-                onUpdateObserver={updateObserver}
-                onAddObserver={addObserver}
-                onDeleteObserver={deleteObserver}
-                onResetHours={resetAllHours}
+                onUpdateObserver={handleUpdateObserver}
+                onAddObserver={handleAddObserver}
+                onDeleteObserver={handleDeleteObserver}
+                onResetHours={handleResetHours}
               />
             )}
             {activeSubTab === 'schedule' && (
@@ -124,21 +211,24 @@ export function App() {
                 schedules={schedules}
                 currentYear={currentYear}
                 signatures={signatures}
-                onSaveSlot={saveScheduleSlot}
+                onSaveSlot={handleSaveSlot}
               />
             )}
             {activeSubTab === 'days' && (
               <ObserverDaysView
                 observers={observers}
-                onUpdateObserverDays={(id, days) => updateObserver(id, { days })}
+                onUpdateObserverDays={(id, days) => {
+                  updateObserver(id, { days })
+                  showToast('تم تحديث أيام الحضور بنجاح ✓')
+                }}
               />
             )}
             {activeSubTab === 'committees' && (
               <CommitteesView
                 committees={committees}
-                onAddCommittee={addCommittee}
-                onUpdateCommittee={updateCommittee}
-                onDeleteCommittee={deleteCommittee}
+                onAddCommittee={handleAddCommittee}
+                onUpdateCommittee={handleUpdateCommittee}
+                onDeleteCommittee={handleDeleteCommittee}
               />
             )}
             {(activeSubTab === 'attendance' || activeSubTab === 'status') && (
@@ -157,9 +247,9 @@ export function App() {
         {activeMainTab === 'subjects' && (
           <SubjectsView
             subjects={subjects}
-            onAddSubject={addSubject}
-            onUpdateSubject={updateSubject}
-            onDeleteSubject={deleteSubject}
+            onAddSubject={handleAddSubject}
+            onUpdateSubject={handleUpdateSubject}
+            onDeleteSubject={handleDeleteSubject}
           />
         )}
 
@@ -167,17 +257,23 @@ export function App() {
           <ControlWorksView
             subjects={subjects}
             controlWorks={controlWorks}
-            onToggleItem={toggleControlStage}
+            onToggleItem={(subjId, itemIdx) => {
+              toggleControlStage(subjId, itemIdx)
+              showToast('تم تحديث بند الكنترول بنجاح ✓')
+            }}
           />
         )}
 
         {activeMainTab === 'settings' && (
           <SignaturesSettingsView
             signatures={signatures}
-            onSaveSignatures={updateSignatures}
+            onSaveSignatures={handleSaveSignatures}
           />
         )}
       </div>
+
+      {/* Universal Floating Toast Notifications */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </main>
   )
 }

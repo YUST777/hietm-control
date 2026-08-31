@@ -17,6 +17,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Edit3,
+  Plus,
 } from 'lucide-react'
 import { EditObserverModal } from '../modals/EditObserverModal'
 
@@ -28,6 +29,7 @@ interface ObserverStatusViewProps {
   branding: SystemBranding
   currentYear: string
   onUpdateObserver: (id: string, updates: Partial<Observer>) => void
+  onAddObserver: (obs: Omit<Observer, 'id'>) => void
 }
 
 export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
@@ -38,6 +40,7 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
   branding,
   currentYear,
   onUpdateObserver,
+  onAddObserver,
 }) => {
   const [search, setSearch] = useState('')
   const [selectedJob, setSelectedJob] = useState('ALL')
@@ -146,6 +149,11 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
     })
   }, [observers, search, selectedJob, selectedWorkload, kpi.avgHours])
 
+  const handleOpenAdd = () => {
+    setSelectedObserverToEdit(null)
+    setIsModalOpen(true)
+  }
+
   const handleOpenEdit = (o: Observer) => {
     setSelectedObserverToEdit(o)
     setIsModalOpen(true)
@@ -154,6 +162,8 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
   const handleSaveModal = (obsData: Omit<Observer, 'id'>, id?: string) => {
     if (id) {
       onUpdateObserver(id, obsData)
+    } else {
+      onAddObserver(obsData)
     }
   }
 
@@ -227,7 +237,7 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
               placeholder="بحث بالاسم أو التخصص..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-7.5 w-52 rounded-lg border border-[#cfcfcb] pr-7.5 pl-2 text-xs font-semibold outline-none focus:border-[#1f4d78]"
+              className="h-7.5 w-44 rounded-lg border border-[#cfcfcb] pr-7.5 pl-2 text-xs font-semibold outline-none focus:border-[#1f4d78]"
             />
           </div>
 
@@ -235,7 +245,7 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
           <select
             value={selectedJob}
             onChange={(e) => setSelectedJob(e.target.value)}
-            className="h-7.5 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none cursor-pointer"
+            className="h-7.5 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none cursor-pointer pr-2 pl-6"
           >
             <option value="ALL">جميع الفئات الوظيفية</option>
             <option value="FACULTY">أعضاء هيئة التدريس</option>
@@ -247,7 +257,7 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
           <select
             value={selectedWorkload}
             onChange={(e) => setSelectedWorkload(e.target.value)}
-            className="h-7.5 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none cursor-pointer"
+            className="h-7.5 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none cursor-pointer pr-2 pl-6"
           >
             <option value="ALL">جميع حالات العبء</option>
             <option value="BALANCED">عبء متوازن (حول المتوسط)</option>
@@ -256,16 +266,28 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
           </select>
         </div>
 
-        {/* Print Button */}
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-black text-white shadow-xs hover:opacity-90 transition"
-          style={{ backgroundColor: primaryColor }}
-        >
-          <Printer className="size-3.5" />
-          <span>طباعة تقرير الحالة (A4)</span>
-        </button>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          {/* Add New Proctor Button */}
+          <button
+            type="button"
+            onClick={handleOpenAdd}
+            className="flex items-center gap-1.5 rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-black text-white shadow-xs hover:bg-[#163756] transition"
+          >
+            <Plus className="size-3.5" />
+            <span>إضافة مراقب</span>
+          </button>
+
+          {/* Print Button */}
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] px-3 py-1.5 text-xs font-bold text-[#333] hover:bg-[#eaeae7] transition"
+          >
+            <Printer className="size-3.5" />
+            <span>طباعة (A4)</span>
+          </button>
+        </div>
       </div>
 
       {/* Printable Official Header */}
@@ -475,7 +497,7 @@ export const ObserverStatusView: React.FC<ObserverStatusViewProps> = ({
         </div>
       </div>
 
-      {/* Edit Observer Modal */}
+      {/* Edit / Add Observer Modal */}
       <EditObserverModal
         isOpen={isModalOpen}
         observer={selectedObserverToEdit}

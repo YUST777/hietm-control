@@ -278,6 +278,7 @@ export function App() {
                 branding={branding}
                 currentYear={currentYear}
                 onUpdateObserver={handleUpdateObserver}
+                onAddObserver={handleAddObserver}
               />
             )}
           </>

@@ -17,6 +17,8 @@ import {
   AlertCircle,
   Clock4,
   Search,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 
 interface AttendanceViewProps {
@@ -58,6 +60,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [period, setPeriod] = useState(PERIODS[0])
   const [search, setSearch] = useState('')
+  const [selectedExtraProctor, setSelectedExtraProctor] = useState('')
 
   const currentDayName = useMemo(() => getArabicDayName(date), [date])
   const primaryColor = branding.primaryColor || '#1f4d78'
@@ -119,13 +122,11 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
   // Synchronize localRecords when date/period changes or when slot changes
   React.useEffect(() => {
-    // Check if we already have saved records for this date & period
     const existing = attendance.filter((a) => a.date === date && a.period === period)
 
     if (existing.length > 0) {
       setLocalRecords(existing)
     } else if (slotAssignedProctors.length > 0) {
-      // Initialize from slot proctors with default 'present'
       const initial: DailyAttendanceRecord[] = slotAssignedProctors.map((p) => {
         const obsObj = observers.find((o) => o.name === p.observerName)
         return {
@@ -139,7 +140,6 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       })
       setLocalRecords(initial)
     } else {
-      // Fallback: If no slot created yet, list all observers
       const initial: DailyAttendanceRecord[] = observers.slice(0, 15).map((o) => ({
         date,
         period,
@@ -169,6 +169,32 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     )
   }
 
+  // Add extra proctor to current attendance sheet
+  const handleAddExtraProctor = () => {
+    if (!selectedExtraProctor) return
+    const alreadyExists = localRecords.some((r) => r.observerName === selectedExtraProctor)
+    if (alreadyExists) {
+      alert('هذا المراقب مضاف بالفعل في كشف الحضور')
+      return
+    }
+    const obsObj = observers.find((o) => o.name === selectedExtraProctor)
+    const newRecord: DailyAttendanceRecord = {
+      date,
+      period,
+      observerId: obsObj?.id || String(Date.now()),
+      observerName: selectedExtraProctor,
+      status: 'present',
+      notes: 'مراقب إضافي / بديل',
+    }
+    setLocalRecords((prev) => [...prev, newRecord])
+    setSelectedExtraProctor('')
+  }
+
+  // Remove proctor from sheet
+  const handleRemoveRecord = (observerName: string) => {
+    setLocalRecords((prev) => prev.filter((r) => r.observerName !== observerName))
+  }
+
   // Mark all present
   const handleMarkAllPresent = () => {
     setLocalRecords((prev) => prev.map((r) => ({ ...r, status: 'present' })))
@@ -176,7 +202,6 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
   // Save current sheet
   const handleSave = () => {
-    // Remove old records for this slot, append updated ones
     const otherRecords = attendance.filter((a) => !(a.date === date && a.period === period))
     onSaveAttendance([...otherRecords, ...localRecords])
   }
@@ -210,7 +235,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           <div className="flex items-center gap-2">
             <UserCheck className="size-4.5" style={{ color: primaryColor }} />
             <h2 className="text-xs font-black text-[#171717]">
-              تسجيل الحضور اليومي للمراقبات
+              تسجيل الحضور اليومي للمراقبات ({localRecords.length} مكلف)
             </h2>
           </div>
 
@@ -239,7 +264,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
-              className="bg-transparent text-xs font-bold text-[#171717] outline-none cursor-pointer"
+              className="bg-transparent text-xs font-bold text-[#171717] outline-none cursor-pointer pr-2 pl-6"
             >
               {PERIODS.map((p) => (
                 <option key={p} value={p}>
@@ -257,15 +282,43 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               placeholder="بحث باسم المراقب..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-7 w-40 rounded-lg border border-[#cfcfcb] pr-6 pl-2 text-xs font-semibold outline-none focus:border-[#1f4d78]"
+              className="h-7 w-36 rounded-lg border border-[#cfcfcb] pr-6 pl-2 text-xs font-semibold outline-none focus:border-[#1f4d78]"
             />
           </div>
         </div>
 
-        {/* Stats Badges & Action Buttons */}
-        <div className="flex items-center gap-2">
+        {/* Add Proctor Dropdown & Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Add extra proctor to sheet */}
+          <div className="flex items-center gap-1">
+            <select
+              value={selectedExtraProctor}
+              onChange={(e) => setSelectedExtraProctor(e.target.value)}
+              className="h-7.5 w-44 rounded-lg border border-[#cfcfcb] bg-white px-2 text-xs font-bold text-[#333] outline-none cursor-pointer pr-2 pl-6"
+            >
+              <option value="">-- إضافة مراقب للكشف --</option>
+              {observers
+                .filter((o) => !localRecords.some((r) => r.observerName === o.name))
+                .map((o) => (
+                  <option key={o.id} value={o.name}>
+                    {o.name} ({o.job})
+                  </option>
+                ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleAddExtraProctor}
+              disabled={!selectedExtraProctor}
+              className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-2.5 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition"
+              title="إضافة المراقب المحدد إلى كشف الحضور"
+            >
+              <Plus className="size-3.5" />
+              <span>إضافة</span>
+            </button>
+          </div>
+
           {/* Quick stats pills */}
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold">
+          <div className="hidden xl:flex items-center gap-1.5 text-[11px] font-bold">
             <span className="rounded-md bg-[#f0fdf4] text-[#15803d] px-2 py-0.5 border border-[#bbf7d0]">
               حاضر: {stats.present}
             </span>
@@ -284,7 +337,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             className="flex items-center gap-1 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] px-2.5 py-1.5 text-xs font-bold text-[#333] hover:bg-[#eaeae7] transition"
           >
             <CheckCircle2 className="size-3.5 text-[#15803d]" />
-            <span>تسجيل الكل حاضر</span>
+            <span>الكل حاضر</span>
           </button>
 
           {/* Save Sheet */}
@@ -306,7 +359,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             style={{ backgroundColor: primaryColor }}
           >
             <Printer className="size-3.5" />
-            <span>طباعة كشف الحضور (A4)</span>
+            <span>طباعة (A4)</span>
           </button>
         </div>
       </div>
@@ -350,14 +403,15 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                   حالة الحضور
                 </th>
                 <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 min-w-36">ملاحظات والتكليف البديل</th>
-                <th className="border-b border-[#cfcfcb] px-2 py-1.5 w-32">توقيع الحضور الرسمي</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-32">توقيع الحضور الرسمي</th>
+                <th className="border-b border-[#cfcfcb] px-1 py-1.5 w-12 print-hide">حذف</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#ecece9]">
               {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-xs font-bold text-[#888]">
-                    لا توجد سجلات حضور لهذه الفترة. تأكد من تحديد التاريخ والفترة الصحيحة.
+                  <td colSpan={7} className="py-8 text-center text-xs font-bold text-[#888]">
+                    لا توجد سجلات حضور لهذه الفترة. استخدم القائمة أعلاه لإضافة مراقبين للكشف.
                   </td>
                 </tr>
               ) : (
@@ -388,7 +442,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                         </span>
                       </td>
 
-                      {/* Status Toggle Buttons (Print-Hide) */}
+                      {/* Status Toggle Buttons */}
                       <td className="border-b border-l border-[#ecece9] px-2 py-1 print-hide">
                         <div className="inline-flex items-center gap-1 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] p-0.5 text-[10.5px] font-bold">
                           <button
@@ -457,8 +511,20 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                       </td>
 
                       {/* Signature Cell */}
-                      <td className="border-b border-[#ecece9] px-2 py-1">
+                      <td className="border-b border-l border-[#ecece9] px-2 py-1">
                         <div className="h-6 w-full border-b border-dotted border-[#aaa]" />
+                      </td>
+
+                      {/* Delete from Attendance Sheet */}
+                      <td className="border-b border-[#ecece9] px-1 py-1 text-center print-hide">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveRecord(r.observerName)}
+                          className="rounded p-1 text-[#c5221f] hover:bg-[#fee2e2] transition"
+                          title="حذف من كشف الحضور"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
                       </td>
                     </tr>
                   )

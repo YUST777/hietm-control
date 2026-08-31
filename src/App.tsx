@@ -397,6 +397,40 @@ export function App() {
         )}
       </div>
 
+      {/* Subtle Bottom Footer Credit (Clean & Less Highlighted) */}
+      <footer className="shrink-0 border-t border-[#ecece9] bg-[#fafaf8] py-1.5 px-4 text-center text-[10.5px] font-medium text-[#777] print-hide">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 opacity-75 hover:opacity-100 transition">
+          <span>نظام إدارة الكنترول والمراقبات | تطوير: يوسف</span>
+          <span className="text-[#ccc]">•</span>
+          <a
+            href="https://www.yust.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[#1f4d78] hover:underline transition"
+          >
+            yust.dev
+          </a>
+          <span className="text-[#ccc]">•</span>
+          <a
+            href="https://www.linkedin.com/in/yousefmsm1/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[#0a66c2] hover:underline transition"
+          >
+            LinkedIn
+          </a>
+          <span className="text-[#ccc]">•</span>
+          <a
+            href="https://github.com/YUST777"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[#171717] hover:underline transition"
+          >
+            GitHub
+          </a>
+        </div>
+      </footer>
+
       {/* Universal Floating Toast Notifications */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </main>

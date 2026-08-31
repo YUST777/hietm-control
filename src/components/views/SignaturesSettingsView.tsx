@@ -1113,46 +1113,11 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
           </div>
         )}
 
-        {/* Global Save Button & All Developer Links Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white border border-[#dededb] p-3 shadow-xs">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#555]">
-            <Sparkles className="size-4" style={{ color: primaryColor }} />
-            <span>نظام إدارة الكنترول والمراقبات | تطوير: يوسف</span>
-            <span className="text-[#ccc]">•</span>
-            <div className="flex items-center gap-2">
-              <a
-                href="https://www.yust.dev/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-[#1f4d78] hover:text-[#0284c7] underline transition"
-                title="الموقع الرسمي"
-              >
-                <Globe className="size-3" />
-                <span>yust.dev</span>
-              </a>
-              <span className="text-[#ccc]">•</span>
-              <a
-                href="https://www.linkedin.com/in/yousefmsm1/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-[#0a66c2] hover:underline transition"
-                title="حساب LinkedIn"
-              >
-                <Linkedin className="size-3" />
-                <span>LinkedIn</span>
-              </a>
-              <span className="text-[#ccc]">•</span>
-              <a
-                href="https://github.com/YUST777"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-[#171717] hover:underline transition"
-                title="حساب GitHub"
-              >
-                <Github className="size-3" />
-                <span>GitHub</span>
-              </a>
-            </div>
+        {/* Global Save Button */}
+        <div className="flex items-center justify-between rounded-xl bg-white border border-[#dededb] p-3 shadow-xs">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#666]">
+            <Sparkles className="size-4 text-[#888]" />
+            <span>يتم حفظ وتطبيق التعديلات فورياً محلياً وسحابياً</span>
           </div>
 
           <button

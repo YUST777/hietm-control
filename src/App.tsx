@@ -1,12 +1,24 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useControlStore } from './lib/store'
-import type { MainTab, ProctoringSubTab, ScheduleSlot, PrintSignatures, SystemBranding, Observer, Subject, Committee } from './types/control'
+import type {
+  MainTab,
+  ProctoringSubTab,
+  ScheduleSlot,
+  PrintSignatures,
+  SystemBranding,
+  Observer,
+  Subject,
+  Committee,
+  DailyAttendanceRecord,
+} from './types/control'
 import { Navbar } from './components/Navbar'
 import { NavigationTabs } from './components/NavigationTabs'
 import { HoursDashboardView } from './components/views/HoursDashboardView'
 import { ScheduleView } from './components/views/ScheduleView'
 import { ObserverDaysView } from './components/views/ObserverDaysView'
 import { CommitteesView } from './components/views/CommitteesView'
+import { AttendanceView } from './components/views/AttendanceView'
+import { ObserverStatusView } from './components/views/ObserverStatusView'
 import { SubjectsView } from './components/views/SubjectsView'
 import { ControlWorksView } from './components/views/ControlWorksView'
 import { SignaturesSettingsView } from './components/views/SignaturesSettingsView'
@@ -32,6 +44,9 @@ export function App() {
 
     schedules,
     saveScheduleSlot,
+
+    attendance,
+    setAttendance,
 
     controlWorks,
     toggleControlStage,
@@ -65,7 +80,7 @@ export function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
-  // Wrapped Handlers with Toast Feedback
+  // Handlers with Toast Feedback
   const handleUpdateObserver = (id: string, updates: Partial<Observer>) => {
     updateObserver(id, updates)
     showToast('تم تحديث بيانات المراقب بنجاح ✓')
@@ -119,6 +134,11 @@ export function App() {
   const handleSaveSlot = (slot: ScheduleSlot) => {
     saveScheduleSlot(slot)
     showToast('تم حفظ جدول توزيع المراقبات بنجاح ✓')
+  }
+
+  const handleSaveAttendance = (records: DailyAttendanceRecord[]) => {
+    setAttendance(records)
+    showToast('تم حفظ وتوثيق كشف الحضور اليومي بنجاح ✓')
   }
 
   const handleSaveSignatures = (sigs: PrintSignatures) => {
@@ -234,15 +254,27 @@ export function App() {
                 onDeleteCommittee={handleDeleteCommittee}
               />
             )}
-            {(activeSubTab === 'attendance' || activeSubTab === 'status') && (
-              <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl border border-[#dededb] bg-white p-8 text-center shadow-sm">
-                <h3 className="text-base font-black text-[#171717]">
-                  {activeSubTab === 'attendance' ? 'كشف تسجيل الحضور اليومي' : 'تقارير حالة المراقبين'}
-                </h3>
-                <p className="mt-2 text-xs font-semibold text-[#777] max-w-md">
-                  يتم تسجيل الحضور تلقائياً بناءً على كشوف التوزيع المعتمدة لكل فترة امتحانية مع توثيق التوقيعات.
-                </p>
-              </div>
+            {activeSubTab === 'attendance' && (
+              <AttendanceView
+                observers={observers}
+                schedules={schedules}
+                attendance={attendance}
+                signatures={signatures}
+                branding={branding}
+                currentYear={currentYear}
+                onSaveAttendance={handleSaveAttendance}
+              />
+            )}
+            {activeSubTab === 'status' && (
+              <ObserverStatusView
+                observers={observers}
+                schedules={schedules}
+                attendance={attendance}
+                signatures={signatures}
+                branding={branding}
+                currentYear={currentYear}
+                onUpdateObserver={handleUpdateObserver}
+              />
             )}
           </>
         )}

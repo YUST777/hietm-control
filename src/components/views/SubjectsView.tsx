@@ -1,28 +1,47 @@
 import React, { useState, useMemo } from 'react'
 import type { Subject } from '../../types/control'
-import { Search, BookOpen, Plus, Trash2 } from 'lucide-react'
+import { Search, BookOpen, Plus, Trash2, Edit3, Check, X } from 'lucide-react'
 
 interface SubjectsViewProps {
   subjects: Subject[]
   onAddSubject: (s: Omit<Subject, 'id'>) => void
+  onUpdateSubject: (id: string, updates: Partial<Subject>) => void
   onDeleteSubject: (id: string) => void
 }
+
+const DEPARTMENTS = [
+  'قسم العلوم الأساسية',
+  'قسم الهندسة المعمارية',
+  'قسم الهندسة المدنية',
+  'قسم الهندسة الكهربية',
+]
+
+const ACADEMIC_YEARS = ['إعدادي', 'الأولى', 'الثانية', 'الثالثة', 'الرابعة']
 
 export const SubjectsView: React.FC<SubjectsViewProps> = ({
   subjects,
   onAddSubject,
+  onUpdateSubject,
   onDeleteSubject,
 }) => {
   const [search, setSearch] = useState('')
   const [selectedDept, setSelectedDept] = useState('ALL')
   const [selectedYear, setSelectedYear] = useState('ALL')
 
-  // New subject state
+  // Edit in place
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editCode, setEditCode] = useState('')
+  const [editName, setEditName] = useState('')
+  const [editDept, setEditDept] = useState('')
+  const [editYear, setEditYear] = useState('')
+  const [editSemester, setEditSemester] = useState('اول')
+
+  // Add subject state
   const [showAddModal, setShowAddModal] = useState(false)
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
-  const [dept, setDept] = useState('قسم العلوم الأساسية')
-  const [year, setYear] = useState('إعدادي')
+  const [dept, setDept] = useState(DEPARTMENTS[0])
+  const [year, setYear] = useState(ACADEMIC_YEARS[0])
   const [semester, setSemester] = useState('اول')
 
   const departments = useMemo(() => {
@@ -47,6 +66,31 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
     })
   }, [subjects, search, selectedDept, selectedYear])
 
+  const startEdit = (s: Subject) => {
+    setEditingId(s.id)
+    setEditCode(s.code)
+    setEditName(s.name)
+    setEditDept(s.dept)
+    setEditYear(s.year)
+    setEditSemester(s.semester)
+  }
+
+  const saveEdit = (id: string) => {
+    if (!editName.trim() || !editCode.trim()) return alert('كود واسم المقرر لا يمكن أن يكونا فارغين')
+    onUpdateSubject(id, {
+      code: editCode.trim(),
+      name: editName.trim(),
+      dept: editDept.trim(),
+      year: editYear.trim(),
+      semester: editSemester.trim(),
+    })
+    setEditingId(null)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+  }
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault()
     if (!name || !code) return alert('يرجى ملء كود واسم المقرر')
@@ -56,26 +100,32 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
     setShowAddModal(false)
   }
 
+  const handleDelete = (id: string, name: string) => {
+    if (window.confirm(`هل تريد بالتأكيد حذف المقرر: "${name}"؟`)) {
+      onDeleteSubject(id)
+    }
+  }
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-2.5">
       {/* Top Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dededb] bg-white p-3 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[#dededb] bg-white p-2.5 shadow-sm">
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="flex items-center gap-2">
-            <BookOpen className="size-5 text-[#1f4d78]" />
-            <h2 className="text-sm font-black text-[#171717]">
+            <BookOpen className="size-4.5 text-[#1f4d78]" />
+            <h2 className="text-xs font-black text-[#171717]">
               دليل المقررات الدراسية ({filtered.length} مقرر)
             </h2>
           </div>
 
           <div className="relative">
-            <Search className="absolute right-2.5 top-2.5 size-3.5 text-[#888]" />
+            <Search className="absolute right-2 top-2 size-3.5 text-[#888]" />
             <input
               type="text"
               placeholder="بحث بالكود أو اسم المادة..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-8 w-56 rounded-lg border border-[#cfcfcb] pr-8 pl-2.5 text-xs font-semibold outline-none focus:border-[#1f4d78]"
+              className="h-7 w-52 rounded-lg border border-[#cfcfcb] pr-7 pl-2 text-xs font-semibold outline-none focus:border-[#1f4d78]"
             />
           </div>
 
@@ -83,7 +133,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           <select
             value={selectedDept}
             onChange={(e) => setSelectedDept(e.target.value)}
-            className="h-8 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none"
+            className="h-7 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none"
           >
             <option value="ALL">جميع الأقسام</option>
             {departments.map((d) => (
@@ -97,7 +147,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="h-8 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none"
+            className="h-7 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none"
           >
             <option value="ALL">جميع الفرق</option>
             {years.map((y) => (
@@ -111,7 +161,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
         <button
           type="button"
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-[#163756] transition"
+          className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-3 py-1 text-xs font-bold text-white shadow-xs hover:bg-[#163756] transition"
         >
           <Plus className="size-3.5" />
           <span>إضافة مقرر جديد</span>
@@ -151,10 +201,11 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                   onChange={(e) => setDept(e.target.value)}
                   className="mt-1 h-8 w-full rounded-lg border border-[#cfcfcb] px-2 outline-none"
                 >
-                  <option value="قسم العلوم الأساسية">قسم العلوم الأساسية</option>
-                  <option value="قسم الهندسة المعمارية">قسم الهندسة المعمارية</option>
-                  <option value="قسم الهندسة المدنية">قسم الهندسة المدنية</option>
-                  <option value="قسم الهندسة الكهربية">قسم الهندسة الكهربية</option>
+                  {DEPARTMENTS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -165,15 +216,15 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                     onChange={(e) => setYear(e.target.value)}
                     className="mt-1 h-8 w-full rounded-lg border border-[#cfcfcb] px-2 outline-none"
                   >
-                    <option value="إعدادي">إعدادي</option>
-                    <option value="أولى">أولى</option>
-                    <option value="ثانية">ثانية</option>
-                    <option value="ثالثة">ثالثة</option>
-                    <option value="رابعة">رابعة</option>
+                    {ACADEMIC_YEARS.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="text-[#666]">الفصل:</label>
+                  <label className="text-[#666]">الفصل الدراسي:</label>
                   <select
                     value={semester}
                     onChange={(e) => setSemester(e.target.value)}
@@ -204,57 +255,178 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
         </div>
       )}
 
-      {/* Main Subjects Table */}
+      {/* Main Subjects Table with Inline Editing */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#dededb] bg-white shadow-sm">
         <div className="min-h-0 flex-1 overflow-auto">
           <table className="w-full border-separate border-spacing-0 text-center text-xs">
             <thead className="sticky top-0 z-10 bg-[#eef3f8]">
-              <tr className="text-[11px] font-black text-[#171717]">
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-2 w-10">م</th>
-                <th className="border-b border-l border-[#cfcfcb] px-3 py-2 w-28">كود المقرر</th>
-                <th className="border-b border-l border-[#cfcfcb] px-4 py-2 text-right">
-                  اسم المقرر الدراسي
+              <tr className="text-[10px] font-black text-[#171717]">
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-10">م</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-24">كود المقرر</th>
+                <th className="border-b border-l border-[#cfcfcb] px-3 py-1.5 text-right min-w-44">
+                  اسم المقرر الدراسي (انقر للتعديل)
                 </th>
-                <th className="border-b border-l border-[#cfcfcb] px-3 py-2 min-w-36">القسم</th>
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-2 w-20">الفرقة</th>
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-2 w-20">الفصل</th>
-                <th className="border-b border-[#cfcfcb] px-2 py-2 w-12">حذف</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 min-w-36">القسم</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-20">الفرقة</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-20">الفصل</th>
+                <th className="border-b border-[#cfcfcb] px-2 py-1.5 w-16">إجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#ecece9]">
-              {filtered.map((s, idx) => (
-                <tr key={s.id} className="hover:bg-[#fbfbfa] transition">
-                  <td className="border-b border-l border-[#ecece9] px-1 py-2 font-bold text-[#888]">
-                    {idx + 1}
-                  </td>
-                  <td className="border-b border-l border-[#ecece9] px-2 py-2 font-black text-[#1f4d78] tabular-nums">
-                    {s.code}
-                  </td>
-                  <td className="border-b border-l border-[#ecece9] px-4 py-2 text-right font-bold text-[#171717]">
-                    {s.name}
-                  </td>
-                  <td className="border-b border-l border-[#ecece9] px-3 py-2 font-semibold text-[#555]">
-                    {s.dept}
-                  </td>
-                  <td className="border-b border-l border-[#ecece9] px-2 py-2 font-bold text-[#171717]">
-                    <span className="rounded bg-[#f0f0ee] px-2 py-0.5 text-[10px]">
-                      {s.year}
-                    </span>
-                  </td>
-                  <td className="border-b border-l border-[#ecece9] px-2 py-2 font-semibold text-[#666]">
-                    {s.semester === 'اول' ? 'الأول' : 'الثاني'}
-                  </td>
-                  <td className="border-b border-[#ecece9] px-2 py-1.5 text-center">
-                    <button
-                      type="button"
-                      onClick={() => onDeleteSubject(s.id)}
-                      className="text-[#c5221f] hover:text-[#900] transition"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map((s, idx) => {
+                const isEditing = editingId === s.id
+
+                return (
+                  <tr key={s.id} className="hover:bg-[#fbfbfa] transition group">
+                    <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#888]">
+                      {idx + 1}
+                    </td>
+
+                    {/* Code */}
+                    <td className="border-b border-l border-[#ecece9] px-1.5 py-1 font-black text-[#1f4d78] tabular-nums">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editCode}
+                          onChange={(e) => setEditCode(e.target.value)}
+                          className="h-6 w-full rounded border border-[#1f4d78] px-1 text-center text-xs font-black text-[#1f4d78] outline-none"
+                        />
+                      ) : (
+                        <span onClick={() => startEdit(s)} className="cursor-pointer">
+                          {s.code}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Name */}
+                    <td className="border-b border-l border-[#ecece9] px-3 py-1 text-right font-bold text-[#171717]">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="h-6 w-full rounded border border-[#1f4d78] px-1.5 text-xs font-bold text-[#171717] outline-none"
+                          autoFocus
+                        />
+                      ) : (
+                        <div
+                          onClick={() => startEdit(s)}
+                          className="cursor-pointer hover:text-[#1f4d78] hover:underline flex items-center justify-between gap-1"
+                        >
+                          <span>{s.name}</span>
+                          <Edit3 className="size-3 text-[#aaa] opacity-0 group-hover:opacity-100 transition" />
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Department */}
+                    <td className="border-b border-l border-[#ecece9] px-2 py-1 font-semibold text-[#555]">
+                      {isEditing ? (
+                        <select
+                          value={editDept}
+                          onChange={(e) => setEditDept(e.target.value)}
+                          className="h-6 w-full rounded border border-[#cfcfcb] px-1 text-[10px] outline-none"
+                        >
+                          {DEPARTMENTS.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span onClick={() => startEdit(s)} className="cursor-pointer text-[10px]">
+                          {s.dept}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Year */}
+                    <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#171717]">
+                      {isEditing ? (
+                        <select
+                          value={editYear}
+                          onChange={(e) => setEditYear(e.target.value)}
+                          className="h-6 w-full rounded border border-[#cfcfcb] px-1 text-[10px] outline-none"
+                        >
+                          {ACADEMIC_YEARS.map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          onClick={() => startEdit(s)}
+                          className="rounded bg-[#f0f0ee] px-1.5 py-0.5 text-[9px] cursor-pointer"
+                        >
+                          {s.year}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Semester */}
+                    <td className="border-b border-l border-[#ecece9] px-1 py-1 font-semibold text-[#666]">
+                      {isEditing ? (
+                        <select
+                          value={editSemester}
+                          onChange={(e) => setEditSemester(e.target.value)}
+                          className="h-6 w-full rounded border border-[#cfcfcb] px-1 text-[10px] outline-none"
+                        >
+                          <option value="اول">الأول</option>
+                          <option value="ثاني">الثاني</option>
+                        </select>
+                      ) : (
+                        <span onClick={() => startEdit(s)} className="cursor-pointer text-[10px]">
+                          {s.semester === 'اول' ? 'الأول' : 'الثاني'}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="border-b border-[#ecece9] px-1 py-1 text-center">
+                      {isEditing ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => saveEdit(s.id)}
+                            className="rounded p-1 bg-[#155724] text-white hover:bg-[#0f3d19] transition"
+                            title="حفظ التعديل"
+                          >
+                            <Check className="size-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEdit}
+                            className="rounded p-1 bg-[#888] text-white hover:bg-[#666] transition"
+                            title="إلغاء"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(s)}
+                            className="rounded p-1 text-[#1f4d78] hover:bg-[#eef3f8] transition"
+                            title="تعديل المقرر"
+                          >
+                            <Edit3 className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(s.id, s.name)}
+                            className="rounded p-1 text-[#c5221f] hover:bg-[#fee2e2] transition"
+                            title="حذف المقرر"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useControlStore } from './lib/store'
-import type { MainTab, ProctoringSubTab, Observer, Committee, Subject, ScheduleSlot, PrintSignatures } from './types/control'
+import type { MainTab, ProctoringSubTab } from './types/control'
 import { Navbar } from './components/Navbar'
 import { NavigationTabs } from './components/NavigationTabs'
 import { HoursDashboardView } from './components/views/HoursDashboardView'
@@ -14,25 +14,43 @@ import { SignaturesSettingsView } from './components/views/SignaturesSettingsVie
 export function App() {
   const {
     observers,
-    setObservers,
+    updateObserver,
+    addObserver,
+    deleteObserver,
+    resetAllHours,
+
     subjects,
-    setSubjects,
+    updateSubject,
+    addSubject,
+    deleteSubject,
+
     committees,
-    setCommittees,
+    updateCommittee,
+    addCommittee,
+    deleteCommittee,
+
     schedules,
-    setSchedules,
+    saveScheduleSlot,
+
     controlWorks,
-    setControlWorks,
+    toggleControlStage,
+
     signatures,
-    setSignatures,
+    updateSignatures,
+
     academicYears,
     currentYear,
     setCurrentYear,
+
+    connectionStatus,
+    lastSyncTime,
+    fetchFromSupabase,
+    seedDatabaseFromDefaults,
     resetToDefaults,
     exportBackup,
   } = useControlStore()
 
-  // Zoom level state - default to 75% for ultra-wide view without scroll
+  // Zoom level state - default to 75% for wide overview without scroll
   const [zoomLevel, setZoomLevel] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('hietm_zoom_level_v3')
@@ -56,83 +74,6 @@ export function App() {
   const [activeMainTab, setActiveMainTab] = useState<MainTab>('proctoring')
   const [activeSubTab, setActiveSubTab] = useState<ProctoringSubTab>('schedule')
 
-  // Observer updates
-  const handleUpdateObserver = (id: string, updates: Partial<Observer>) => {
-    setObservers((prev) => prev.map((o) => (o.id === id ? { ...o, ...updates } : o)))
-  }
-
-  const handleUpdateObserverDays = (id: string, days: string) => {
-    setObservers((prev) => prev.map((o) => (o.id === id ? { ...o, days } : o)))
-  }
-
-  const handleResetHours = () => {
-    if (window.confirm('هل تريد تصفير جميع ساعات المراقبة المسجلة للمراقبين؟')) {
-      setObservers((prev) => prev.map((o) => ({ ...o, hours: 0 })))
-    }
-  }
-
-  // Committee updates
-  const handleAddCommittee = (c: Omit<Committee, 'id'>) => {
-    const newC: Committee = { id: String(Date.now()), ...c }
-    setCommittees((prev) => [newC, ...prev])
-  }
-
-  const handleDeleteCommittee = (id: string) => {
-    if (window.confirm('هل تريد بالتأكيد حذف هذه اللجنة؟')) {
-      setCommittees((prev) => prev.filter((c) => c.id !== id))
-    }
-  }
-
-  // Subject updates
-  const handleAddSubject = (s: Omit<Subject, 'id'>) => {
-    const newS: Subject = { id: String(Date.now()), ...s }
-    setSubjects((prev) => [newS, ...prev])
-  }
-
-  const handleDeleteSubject = (id: string) => {
-    if (window.confirm('هل تريد بالتأكيد حذف هذا المقرر الدراسي؟')) {
-      setSubjects((prev) => prev.filter((s) => s.id !== id))
-    }
-  }
-
-  // Schedule slot save
-  const handleSaveSlot = (slot: ScheduleSlot) => {
-    setSchedules((prev) => [slot, ...prev])
-  }
-
-  // Control item toggle
-  const handleToggleControlItem = (subjectId: string, itemIndex: number) => {
-    setControlWorks((prev) => {
-      const existing = prev.find((cw) => cw.subjectId === subjectId)
-      if (existing) {
-        const nextChecklist = {
-          ...existing.checklist,
-          [itemIndex]: !existing.checklist[itemIndex],
-        }
-        return prev.map((cw) =>
-          cw.subjectId === subjectId ? { ...cw, checklist: nextChecklist } : cw
-        )
-      } else {
-        const subj = subjects.find((s) => s.id === subjectId)
-        return [
-          ...prev,
-          {
-            subjectId,
-            subjectName: subj?.name || '',
-            dept: subj?.dept || '',
-            year: subj?.year || '',
-            checklist: { [itemIndex]: true },
-          },
-        ]
-      }
-    })
-  }
-
-  // Signatures update
-  const handleSaveSignatures = (sigs: PrintSignatures) => {
-    setSignatures(sigs)
-  }
-
   return (
     <main className="flex h-full w-full flex-col overflow-hidden bg-[#f7f7f5] p-2 sm:p-2.5 text-[#171717]">
       {/* Top Navbar */}
@@ -145,12 +86,16 @@ export function App() {
         totalCommittees={committees.length}
         zoomLevel={zoomLevel}
         setZoomLevel={setZoomLevel}
+        connectionStatus={connectionStatus}
+        lastSyncTime={lastSyncTime}
+        onRefreshCloud={fetchFromSupabase}
+        onSeedDatabase={seedDatabaseFromDefaults}
         onReset={resetToDefaults}
         onExport={exportBackup}
         onPrint={() => window.print()}
       />
 
-      {/* Navigation Pills */}
+      {/* Navigation Tabs */}
       <NavigationTabs
         activeMainTab={activeMainTab}
         setActiveMainTab={setActiveMainTab}
@@ -165,8 +110,10 @@ export function App() {
             {activeSubTab === 'hours' && (
               <HoursDashboardView
                 observers={observers}
-                onUpdateObserver={handleUpdateObserver}
-                onResetHours={handleResetHours}
+                onUpdateObserver={updateObserver}
+                onAddObserver={addObserver}
+                onDeleteObserver={deleteObserver}
+                onResetHours={resetAllHours}
               />
             )}
             {activeSubTab === 'schedule' && (
@@ -177,20 +124,21 @@ export function App() {
                 schedules={schedules}
                 currentYear={currentYear}
                 signatures={signatures}
-                onSaveSlot={handleSaveSlot}
+                onSaveSlot={saveScheduleSlot}
               />
             )}
             {activeSubTab === 'days' && (
               <ObserverDaysView
                 observers={observers}
-                onUpdateObserverDays={handleUpdateObserverDays}
+                onUpdateObserverDays={(id, days) => updateObserver(id, { days })}
               />
             )}
             {activeSubTab === 'committees' && (
               <CommitteesView
                 committees={committees}
-                onAddCommittee={handleAddCommittee}
-                onDeleteCommittee={handleDeleteCommittee}
+                onAddCommittee={addCommittee}
+                onUpdateCommittee={updateCommittee}
+                onDeleteCommittee={deleteCommittee}
               />
             )}
             {(activeSubTab === 'attendance' || activeSubTab === 'status') && (
@@ -209,8 +157,9 @@ export function App() {
         {activeMainTab === 'subjects' && (
           <SubjectsView
             subjects={subjects}
-            onAddSubject={handleAddSubject}
-            onDeleteSubject={handleDeleteSubject}
+            onAddSubject={addSubject}
+            onUpdateSubject={updateSubject}
+            onDeleteSubject={deleteSubject}
           />
         )}
 
@@ -218,14 +167,14 @@ export function App() {
           <ControlWorksView
             subjects={subjects}
             controlWorks={controlWorks}
-            onToggleItem={handleToggleControlItem}
+            onToggleItem={toggleControlStage}
           />
         )}
 
         {activeMainTab === 'settings' && (
           <SignaturesSettingsView
             signatures={signatures}
-            onSaveSignatures={handleSaveSignatures}
+            onSaveSignatures={updateSignatures}
           />
         )}
       </div>

@@ -37,14 +37,15 @@ export interface ScheduleRow {
 }
 
 export interface ScheduleSlot {
+  id?: string
   date: string
   period: string
   startTime: string
   semester: string
   academicYear: string
-  examType: string
-  reserves: string[]
-  rows: ScheduleRow[]
+  examType?: string
+  reserves?: string[]
+  rows?: ScheduleRow[]
 }
 
 export interface DailyAttendanceRecord {

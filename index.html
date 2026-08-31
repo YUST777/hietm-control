@@ -7,8 +7,250 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+      #app-splash-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 999999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 50% 35%, #ffffff 0%, #f4f6f8 60%, #e2e8f0 100%);
+        font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+        color: #1e293b;
+        user-select: none;
+        transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      #app-splash-screen.splash-hidden {
+        opacity: 0;
+        transform: scale(1.03);
+        pointer-events: none;
+      }
+      .splash-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 2.5rem 2.25rem;
+        border-radius: 1.5rem;
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(226, 232, 240, 0.85);
+        box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.6);
+        max-width: 440px;
+        width: 90%;
+      }
+      .splash-logo-wrapper {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.25rem;
+      }
+      .splash-logo-glow {
+        position: absolute;
+        inset: -6px;
+        border-radius: 9999px;
+        background: linear-gradient(135deg, rgba(31, 77, 120, 0.3), rgba(59, 130, 246, 0.18));
+        filter: blur(10px);
+        animation: splash-pulse 2.5s infinite alternate ease-in-out;
+      }
+      .splash-logo-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 9999px;
+        background: #ffffff;
+        border: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      }
+      .splash-logo-img {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+      }
+      .splash-logo-fallback {
+        width: 56px;
+        height: 56px;
+        color: #1f4d78;
+      }
+      .splash-title {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+        line-height: 1.4;
+      }
+      .splash-subtitle {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-top: 0.35rem;
+        margin-bottom: 1.75rem;
+      }
+      .splash-progress-wrapper {
+        width: 100%;
+      }
+      .splash-progress-track {
+        width: 100%;
+        height: 7px;
+        background: #e2e8f0;
+        border-radius: 9999px;
+        overflow: hidden;
+        position: relative;
+      }
+      .splash-progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #1f4d78, #3b82f6);
+        border-radius: 9999px;
+        transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+      }
+      .splash-status-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+      .splash-status-text {
+        color: #64748b;
+        transition: opacity 0.2s ease;
+      }
+      .splash-percent-text {
+        color: #1f4d78;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      @keyframes splash-pulse {
+        0% { transform: scale(0.95); opacity: 0.5; }
+        100% { transform: scale(1.12); opacity: 0.95; }
+      }
+    </style>
   </head>
   <body class="bg-[#f7f7f5] text-[#171717] font-['Cairo',sans-serif] antialiased">
+    <!-- Instant Loading Splash Screen with Custom Logo & Percentage Counter -->
+    <div id="app-splash-screen" dir="rtl">
+      <div class="splash-card">
+        <div class="splash-logo-wrapper">
+          <div class="splash-logo-glow" id="splash-glow"></div>
+          <div class="splash-logo-container" id="splash-logo-box">
+            <!-- Populated immediately from localStorage by inline script -->
+            <svg class="splash-logo-fallback" id="splash-default-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+            </svg>
+            <img class="splash-logo-img" id="splash-custom-img" style="display: none;" alt="Logo" />
+          </div>
+        </div>
+
+        <h1 class="splash-title" id="splash-app-title">نظام الكنترول والمراقبات</h1>
+        <p class="splash-subtitle" id="splash-institute-title">المعهد العالي للهندسة والتكنولوجيا</p>
+
+        <div class="splash-progress-wrapper">
+          <div class="splash-progress-track">
+            <div class="splash-progress-bar" id="splash-bar"></div>
+          </div>
+          <div class="splash-status-row">
+            <span class="splash-status-text" id="splash-status">جاري تهيئة بيئة العمل...</span>
+            <span class="splash-percent-text" id="splash-percent">0%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function() {
+        try {
+          var raw = localStorage.getItem('hietm_local_branding_v3');
+          if (raw) {
+            var b = JSON.parse(raw);
+            if (b) {
+              if (b.appName) {
+                var el = document.getElementById('splash-app-title');
+                if (el) el.textContent = b.appName;
+              }
+              if (b.instituteName) {
+                var el2 = document.getElementById('splash-institute-title');
+                if (el2) el2.textContent = b.instituteName;
+              }
+              if (b.logoUrl && b.logoUrl.trim().length > 0) {
+                var img = document.getElementById('splash-custom-img');
+                var defIcon = document.getElementById('splash-default-icon');
+                if (img && defIcon) {
+                  img.src = b.logoUrl;
+                  img.style.display = 'block';
+                  defIcon.style.display = 'none';
+                }
+              }
+              if (b.primaryColor) {
+                var bar = document.getElementById('splash-bar');
+                var pct = document.getElementById('splash-percent');
+                if (bar) bar.style.background = 'linear-gradient(90deg, ' + b.primaryColor + ', #3b82f6)';
+                if (pct) pct.style.color = b.primaryColor;
+              }
+            }
+          }
+        } catch(e) {}
+
+        var currentProgress = 0;
+        var bar = document.getElementById('splash-bar');
+        var pct = document.getElementById('splash-percent');
+        var status = document.getElementById('splash-status');
+
+        function setProgress(val, msg) {
+          currentProgress = Math.min(100, Math.max(currentProgress, val));
+          if (bar) bar.style.width = currentProgress + '%';
+          if (pct) pct.textContent = Math.round(currentProgress) + '%';
+          if (msg && status) status.textContent = msg;
+        }
+
+        // Simulated smooth initial progress while scripts load & parse
+        var step = 0;
+        var stages = [
+          { p: 18, msg: 'جاري تحميل الهوية والإعدادات...' },
+          { p: 42, msg: 'تحميل كشوفات المراقبين والمقررات...' },
+          { p: 68, msg: 'تجهيز اللجان ومصفوفة الكنترول...' },
+          { p: 88, msg: 'مزامنة الجداول الامتحانية...' },
+          { p: 95, msg: 'اكتمال تهيئة التطبيق...' }
+        ];
+
+        var interval = setInterval(function() {
+          if (step < stages.length) {
+            setProgress(stages[step].p, stages[step].msg);
+            step++;
+          } else {
+            clearInterval(interval);
+          }
+        }, 130);
+
+        window.dismissSplashScreen = function() {
+          clearInterval(interval);
+          setProgress(100, 'تم تجهيز النظام بنجاح ✓');
+          setTimeout(function() {
+            var splash = document.getElementById('app-splash-screen');
+            if (splash) {
+              splash.classList.add('splash-hidden');
+              setTimeout(function() {
+                if (splash.parentNode) splash.parentNode.removeChild(splash);
+              }, 550);
+            }
+          }, 350);
+        };
+      })();
+    </script>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

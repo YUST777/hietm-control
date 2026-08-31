@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useControlStore } from './lib/store'
 import type {
   MainTab,
@@ -200,6 +200,16 @@ export function App() {
   const [activeMainTab, setActiveMainTab] = useState<MainTab>('proctoring')
   // Active Sub-Tab under Proctoring & Exam Tables
   const [activeProctoringTab, setActiveProctoringTab] = useState<ProctoringSubTab>('schedule')
+
+  // Dismiss splash loading screen once React application mounts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (typeof (window as any).dismissSplashScreen === 'function') {
+        ;(window as any).dismissSplashScreen()
+      }
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <main

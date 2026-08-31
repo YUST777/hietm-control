@@ -9,6 +9,7 @@ function createWindow() {
     height: 1000,
     minWidth: 1024,
     minHeight: 650,
+    show: false,
     title: 'نظام الكنترول والمراقبات | المعهد العالي للهندسة والتكنولوجيا',
     icon: path.join(__dirname, process.platform === 'win32' ? '../public/icon.ico' : '../public/icon.png'),
     backgroundColor: '#f7f7f5',
@@ -20,8 +21,10 @@ function createWindow() {
     },
   })
 
-  // Start maximized so everything fits comfortably
-  mainWindow.maximize()
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.maximize()
+    mainWindow.show()
+  })
 
   mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
 

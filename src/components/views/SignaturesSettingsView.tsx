@@ -18,14 +18,8 @@ import {
   Clock,
   Briefcase,
   ListOrdered,
-  Code2,
   Globe,
   Linkedin,
-  Github,
-  ExternalLink,
-  Cpu,
-  Layers,
-  HeartHandshake,
 } from 'lucide-react'
 
 interface SettingsViewProps {
@@ -90,7 +84,7 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   // Navigation subtabs inside Settings
   const [activeTab, setActiveTab] = useState<
-    'branding' | 'signatures' | 'periods' | 'departments' | 'stages' | 'years' | 'backup' | 'developer'
+    'branding' | 'signatures' | 'periods' | 'departments' | 'stages' | 'years' | 'backup'
   >('branding')
 
   // Signatures State
@@ -309,20 +303,6 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
           >
             <ShieldCheck className="size-3.5" />
             <span>النسخ الاحتياطي</span>
-          </button>
-
-          {/* Developer & System Information Tab */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('developer')}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition cursor-pointer ${
-              activeTab === 'developer'
-                ? 'bg-[#0f172a] text-white shadow-xs'
-                : 'text-[#0f172a] bg-[#f1f5f9] hover:bg-[#e2e8f0]'
-            }`}
-          >
-            <Code2 className="size-3.5 text-[#38bdf8]" />
-            <span>المطور والنظام (Dev)</span>
           </button>
         </div>
 
@@ -1001,118 +981,6 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
           </div>
         )}
 
-        {/* Tab 8: Developer & System Specs (Built by Yousef / YUST) */}
-        {activeTab === 'developer' && (
-          <div className="flex flex-col gap-4">
-            {/* Developer Hero Card */}
-            <div className="relative overflow-hidden rounded-3xl border border-[#cbd5e1] bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] p-6 text-white shadow-xl">
-              {/* Decorative Background Elements */}
-              <div className="absolute top-0 left-0 -translate-x-12 -translate-y-12 size-48 rounded-full bg-[#38bdf8]/10 blur-3xl" />
-              <div className="absolute bottom-0 right-0 translate-x-12 translate-y-12 size-48 rounded-full bg-[#818cf8]/10 blur-3xl" />
-
-              <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-5 text-center md:text-right">
-                {/* Avatar Badge */}
-                <div className="relative flex size-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#38bdf8] via-[#6366f1] to-[#a855f7] p-0.5 shadow-lg">
-                  <div className="flex size-full items-center justify-center rounded-2xl bg-[#0f172a]">
-                    <span className="font-mono text-2xl font-black tracking-widest text-[#38bdf8]">
-                      YUST
-                    </span>
-                  </div>
-                </div>
-
-                {/* Developer Info */}
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-1">
-                    <h2 className="text-lg font-black text-white">
-                      تم التطوير والبناء بواسطة: يوسف (Yousef)
-                    </h2>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#38bdf8]/15 px-2.5 py-0.5 text-[10.5px] font-bold text-[#38bdf8] border border-[#38bdf8]/30">
-                      <Sparkles className="size-3" />
-                      <span>Software Engineer & System Developer</span>
-                    </span>
-                  </div>
-
-                  <p className="text-xs font-semibold text-[#94a3b8] leading-relaxed max-w-2xl">
-                    تم تصميم وهندسة وتطوير هذا النظام الرقمي المتكامل لإدارة جداول الامتحانات والكنترول الجامعي وتوزيع الملاحظات بكفاءة ودقة عالية، مع توفير ميزة الحفظ السحابي الفوري والمحلي والعمل بدون إنترنت (Local-First Offline Ready Architecture).
-                  </p>
-
-                  {/* Interactive Developer Links */}
-                  <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-2.5">
-                    {/* Website / Portfolio */}
-                    <a
-                      href="https://www.yust.dev/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-2 rounded-xl bg-white/10 hover:bg-[#38bdf8] px-3.5 py-2 text-xs font-bold text-white hover:text-[#0f172a] border border-white/15 hover:border-[#38bdf8] transition shadow-xs"
-                    >
-                      <Globe className="size-4 text-[#38bdf8] group-hover:text-[#0f172a] transition" />
-                      <span>الموقع الرسمي (yust.dev)</span>
-                      <ExternalLink className="size-3 opacity-60" />
-                    </a>
-
-                    {/* LinkedIn */}
-                    <a
-                      href="https://www.linkedin.com/in/yousefmsm1/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-2 rounded-xl bg-[#0a66c2]/20 hover:bg-[#0a66c2] px-3.5 py-2 text-xs font-bold text-white border border-[#0a66c2]/40 hover:border-[#0a66c2] transition shadow-xs"
-                    >
-                      <Linkedin className="size-4 text-[#60a5fa] group-hover:text-white transition" />
-                      <span>LinkedIn Profile</span>
-                      <ExternalLink className="size-3 opacity-60" />
-                    </a>
-
-                    {/* GitHub */}
-                    <a
-                      href="https://github.com/YUST777"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white px-3.5 py-2 text-xs font-bold text-white hover:text-black border border-white/15 hover:border-white transition shadow-xs"
-                    >
-                      <Github className="size-4 text-white group-hover:text-black transition" />
-                      <span>GitHub (@YUST777)</span>
-                      <ExternalLink className="size-3 opacity-60" />
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Technical Specifications Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-bold">
-              <div className="rounded-2xl border border-[#dededb] bg-white p-3.5 shadow-2xs">
-                <div className="flex items-center gap-2 text-[#1f4d78] mb-2">
-                  <Cpu className="size-4 text-[#0284c7]" />
-                  <h4 className="font-black text-[#171717]">بنية النظام التقنية</h4>
-                </div>
-                <p className="text-[11px] font-semibold text-[#666]">
-                  React 18 + TypeScript + Vite + Tailwind CSS مع محرك معالجة متوازي فائق السرعة
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-[#dededb] bg-white p-3.5 shadow-2xs">
-                <div className="flex items-center gap-2 text-[#1f4d78] mb-2">
-                  <Layers className="size-4 text-[#059669]" />
-                  <h4 className="font-black text-[#171717]">قاعدة البيانات والمزامنة</h4>
-                </div>
-                <p className="text-[11px] font-semibold text-[#666]">
-                  Local-First Indexed Architecture + مزامنة سحابية هجينة مع Supabase PostgreSQL
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-[#dededb] bg-white p-3.5 shadow-2xs">
-                <div className="flex items-center gap-2 text-[#1f4d78] mb-2">
-                  <HeartHandshake className="size-4 text-[#e11d48]" />
-                  <h4 className="font-black text-[#171717]">الجهة المعتمدة</h4>
-                </div>
-                <p className="text-[11px] font-semibold text-[#666]">
-                  المعهد العالي للهندسة والتكنولوجيا — وحدة الجداول ولجان الامتحانات والكنترول
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Global Save Button */}
         <div className="flex items-center justify-between rounded-xl bg-white border border-[#dededb] p-3 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-bold text-[#666]">
@@ -1139,27 +1007,20 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
               href="https://www.yust.dev/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-[#1f4d78] hover:underline transition"
+              className="inline-flex items-center gap-1 hover:text-[#1f4d78] hover:underline transition"
             >
-              yust.dev
+              <Globe className="size-3" />
+              <span>yust.dev</span>
             </a>
             <span className="text-[#ccc]">•</span>
             <a
               href="https://www.linkedin.com/in/yousefmsm1/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-[#0a66c2] hover:underline transition"
+              className="inline-flex items-center gap-1 hover:text-[#0a66c2] hover:underline transition"
             >
-              LinkedIn
-            </a>
-            <span className="text-[#ccc]">•</span>
-            <a
-              href="https://github.com/YUST777"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-[#171717] hover:underline transition"
-            >
-              GitHub
+              <Linkedin className="size-3" />
+              <span>LinkedIn</span>
             </a>
           </div>
         </div>

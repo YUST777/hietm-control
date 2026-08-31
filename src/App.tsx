@@ -68,6 +68,7 @@ export function App() {
     manualSync,
     resetToDefaults,
     exportBackup,
+    importBackup,
   } = useControlStore()
 
   // Toast state
@@ -325,6 +326,19 @@ export function App() {
             onSetCurrentYear={(year) => {
               setCurrentYear(year)
               showToast(`تم تعيين العام الجامعي النشط: "${year}" ✓`)
+            }}
+            onExportBackup={() => {
+              exportBackup()
+              showToast('تم تصدير النسخة الاحتياطية بنجاح 💾')
+            }}
+            onImportBackup={(jsonStr) => {
+              const success = importBackup(jsonStr)
+              if (success) showToast('تم استيراد واستعادة البيانات بنجاح ✓')
+              return success
+            }}
+            onResetToDefaults={() => {
+              resetToDefaults()
+              showToast('تمت استعادة البيانات الأصلية', 'info')
             }}
           />
         )}

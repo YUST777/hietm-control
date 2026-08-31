@@ -41,7 +41,11 @@ export const DEFAULT_BRANDING: SystemBranding = {
 function loadLocal<T>(key: string, fallback: T): T {
   try {
     const data = localStorage.getItem(key)
-    if (data) return JSON.parse(data)
+    if (data) {
+      const parsed = JSON.parse(data)
+      if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback
+      return parsed
+    }
   } catch (e) {
     // ignore
   }
@@ -168,13 +172,13 @@ export function useControlStore() {
   useEffect(() => saveLocal(STORAGE_KEYS.CURRENT_YEAR, currentYear), [currentYear])
 
   // Push latest stateRef to cloud
-  const pushToCloud = useCallback(async () => {
+  const pushToCloud = useCallback(async (isImmediate = false) => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       setSyncStatus('offline')
       return
     }
 
-    if (isSyncingRef.current) return
+    if (isSyncingRef.current && !isImmediate) return
     isSyncingRef.current = true
     setSyncStatus('syncing')
 
@@ -183,6 +187,7 @@ export function useControlStore() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(stateRef.current),
+        keepalive: isImmediate,
       })
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -223,15 +228,15 @@ export function useControlStore() {
       const json = await res.json()
       if (json && json.data) {
         const d = json.data
-        if (d.observers && d.observers.length > 0) setObservers(d.observers)
-        if (d.subjects && d.subjects.length > 0) setSubjects(d.subjects)
-        if (d.committees && d.committees.length > 0) setCommittees(d.committees)
-        if (d.schedules && d.schedules.length > 0) setSchedules(d.schedules)
-        if (d.controlWorks && d.controlWorks.length > 0) setControlWorks(d.controlWorks)
-        if (d.signatures) setSignatures(d.signatures)
-        if (d.branding) setBranding(d.branding)
-        if (d.academicYears && d.academicYears.length > 0) setAcademicYears(d.academicYears)
-        if (d.currentYear) setCurrentYearState(d.currentYear)
+        if (Array.isArray(d.observers) && d.observers.length > 0) setObservers(d.observers)
+        if (Array.isArray(d.subjects) && d.subjects.length > 0) setSubjects(d.subjects)
+        if (Array.isArray(d.committees) && d.committees.length > 0) setCommittees(d.committees)
+        if (Array.isArray(d.schedules) && d.schedules.length > 0) setSchedules(d.schedules)
+        if (Array.isArray(d.controlWorks) && d.controlWorks.length > 0) setControlWorks(d.controlWorks)
+        if (d.signatures && typeof d.signatures === 'object') setSignatures(d.signatures)
+        if (d.branding && typeof d.branding === 'object') setBranding(d.branding)
+        if (Array.isArray(d.academicYears) && d.academicYears.length > 0) setAcademicYears(d.academicYears)
+        if (typeof d.currentYear === 'string') setCurrentYearState(d.currentYear)
       }
 
       setSyncStatus('synced')
@@ -241,7 +246,7 @@ export function useControlStore() {
     }
   }, [])
 
-  // Initial pull once on mount + online/offline event listeners
+  // Initial pull once on mount + online/offline + beforeunload flush
   useEffect(() => {
     if (!hasMountedRef.current) {
       hasMountedRef.current = true
@@ -256,12 +261,21 @@ export function useControlStore() {
       setSyncStatus('offline')
     }
 
+    const handleBeforeUnload = () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+        pushToCloud(true)
+      }
+    }
+
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
+    window.addEventListener('beforeunload', handleBeforeUnload)
 
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
     }
   }, [pullFromCloud, pushToCloud])
 
@@ -439,6 +453,30 @@ export function useControlStore() {
     URL.revokeObjectURL(url)
   }
 
+  // Import JSON backup with full structure validation
+  const importBackup = (jsonStr: string): boolean => {
+    try {
+      const parsed = JSON.parse(jsonStr)
+      if (!parsed || typeof parsed !== 'object') return false
+
+      if (Array.isArray(parsed.observers)) setObservers(parsed.observers)
+      if (Array.isArray(parsed.subjects)) setSubjects(parsed.subjects)
+      if (Array.isArray(parsed.committees)) setCommittees(parsed.committees)
+      if (Array.isArray(parsed.schedules)) setSchedules(parsed.schedules)
+      if (Array.isArray(parsed.attendance)) setAttendance(parsed.attendance)
+      if (Array.isArray(parsed.controlWorks)) setControlWorks(parsed.controlWorks)
+      if (parsed.signatures && typeof parsed.signatures === 'object') setSignatures(parsed.signatures)
+      if (parsed.branding && typeof parsed.branding === 'object') setBranding(parsed.branding)
+      if (Array.isArray(parsed.academicYears)) setAcademicYears(parsed.academicYears)
+      if (typeof parsed.currentYear === 'string') setCurrentYearState(parsed.currentYear)
+
+      queuePush()
+      return true
+    } catch {
+      return false
+    }
+  }
+
   return {
     observers,
     setObservers,
@@ -490,5 +528,6 @@ export function useControlStore() {
     manualSync: pushToCloud,
     resetToDefaults,
     exportBackup,
+    importBackup,
   }
 }

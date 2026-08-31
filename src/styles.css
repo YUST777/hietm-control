@@ -85,11 +85,30 @@ select {
   table {
     border-collapse: collapse !important;
     width: 100% !important;
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
   }
 
   th, td {
     border: 1px solid #000000 !important;
     color: #000000 !important;
     padding: 3px 2px !important;
+  }
+
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }

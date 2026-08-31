@@ -105,8 +105,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
   // Add reserve
   const addReserve = () => {
-    if (selectedReserveToAdd && !reserves.includes(selectedReserveToAdd)) {
-      setReserves((prev) => [...prev, selectedReserveToAdd])
+    const trimmed = selectedReserveToAdd.trim()
+    if (trimmed && !reserves.includes(trimmed)) {
+      setReserves((prev) => [...prev, trimmed])
       setSelectedReserveToAdd('')
     }
   }
@@ -116,16 +117,20 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     setReserves((prev) => prev.filter((r) => r !== name))
   }
 
-  // Check for duplicate proctors across committees in this same slot (conflict detection)
+  // Check for duplicate proctors across committees in this same slot (conflict detection with trimmed names)
   const conflicts = useMemo(() => {
     const assigned = new Map<string, number>()
     rows.forEach((r) => {
-      if (r.obs1) assigned.set(r.obs1, (assigned.get(r.obs1) || 0) + 1)
-      if (r.obs2) assigned.set(r.obs2, (assigned.get(r.obs2) || 0) + 1)
-      if (r.obs3) assigned.set(r.obs3, (assigned.get(r.obs3) || 0) + 1)
+      const o1 = (r.obs1 || '').trim()
+      const o2 = (r.obs2 || '').trim()
+      const o3 = (r.obs3 || '').trim()
+      if (o1) assigned.set(o1, (assigned.get(o1) || 0) + 1)
+      if (o2) assigned.set(o2, (assigned.get(o2) || 0) + 1)
+      if (o3) assigned.set(o3, (assigned.get(o3) || 0) + 1)
     })
     reserves.forEach((res) => {
-      assigned.set(res, (assigned.get(res) || 0) + 1)
+      const rName = (res || '').trim()
+      if (rName) assigned.set(rName, (assigned.get(rName) || 0) + 1)
     })
 
     const duplicateNames: string[] = []
@@ -247,7 +252,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           <button
             type="button"
             onClick={addEmptyRow}
-            className="flex items-center gap-1.5 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] px-3 py-1.5 text-xs font-bold text-[#171717] hover:bg-[#eaeae7] transition"
+            className="flex items-center gap-1.5 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] px-3 py-1.5 text-xs font-bold text-[#171717] hover:bg-[#eaeae7] transition cursor-pointer"
             title="إضافة صف لجنة فارغ بدون تعبئة مسبقة"
           >
             <Plus className="size-3.5 text-[#1f4d78]" />
@@ -258,7 +263,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           <button
             type="button"
             onClick={clearAllRows}
-            className="flex items-center gap-1 rounded-lg border border-[#fee2e2] bg-[#fff5f5] px-2 py-1.5 text-xs font-bold text-[#c5221f] hover:bg-[#fee2e2] transition"
+            className="flex items-center gap-1 rounded-lg border border-[#fee2e2] bg-[#fff5f5] px-2 py-1.5 text-xs font-bold text-[#c5221f] hover:bg-[#fee2e2] transition cursor-pointer"
             title="إفراغ الجدول للبدء من جديد"
           >
             <RefreshCcw className="size-3" />
@@ -268,7 +273,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            className="flex items-center gap-1.5 rounded-lg bg-[#155724] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#0e3c18] transition"
+            className="flex items-center gap-1.5 rounded-lg bg-[#155724] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#0e3c18] transition cursor-pointer"
           >
             <Save className="size-3.5" />
             <span>حفظ التوزيع</span>
@@ -278,7 +283,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           <button
             type="button"
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 rounded-lg bg-[#1f4d78] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#163756] transition"
+            className="flex items-center gap-1.5 rounded-lg bg-[#1f4d78] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#163756] transition cursor-pointer"
           >
             <Printer className="size-3.5" />
             <span>طباعة الكشف (A4)</span>
@@ -345,9 +350,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 </tr>
               ) : (
                 rows.map((r, idx) => {
-                  const hasObs1Conflict = r.obs1 && conflicts.includes(r.obs1)
-                  const hasObs2Conflict = r.obs2 && conflicts.includes(r.obs2)
-                  const hasObs3Conflict = r.obs3 && conflicts.includes(r.obs3)
+                  const hasObs1Conflict = r.obs1 && conflicts.includes(r.obs1.trim())
+                  const hasObs2Conflict = r.obs2 && conflicts.includes(r.obs2.trim())
+                  const hasObs3Conflict = r.obs3 && conflicts.includes(r.obs3.trim())
+
+                  // Fallback checks for orphaned committee or subject IDs
+                  const committeeFound = !r.committeeId || committees.some((c) => c.id === r.committeeId)
+                  const subjectFound = !r.subjectId || subjects.some((s) => s.id === r.subjectId)
 
                   return (
                     <tr key={r.id} className="hover:bg-[#fbfbfa] transition">
@@ -367,6 +376,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           }`}
                         >
                           <option value="">-- اختر اللجنة والقاعة --</option>
+                          {!committeeFound && (
+                            <option value={r.committeeId}>لجنة سابقة ({r.committeeId})</option>
+                          )}
                           {committees.map((c) => (
                             <option key={c.id} value={c.id}>
                               لجنة {c.roomNum} — {c.hallName} ({c.floor})
@@ -387,6 +399,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           }`}
                         >
                           <option value="">-- اختر المقرر الدراسي --</option>
+                          {!subjectFound && (
+                            <option value={r.subjectId}>مقرر سابق ({r.subjectId})</option>
+                          )}
                           {subjects.map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.name} ({s.code}) - {s.dept}
@@ -409,7 +424,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           <option value="">-- اختيـاري --</option>
                           {observers.map((o) => {
                             const isAvail = isObserverAvailableOnDay(o, currentDayName)
-                            const isConf = conflicts.includes(o.name)
+                            const isConf = conflicts.includes(o.name.trim())
                             const prefix = isConf ? '⚠️ ' : !isAvail ? `⏳ (غير متاح ${currentDayName}) ` : ''
                             return (
                               <option key={o.id} value={o.name}>
@@ -434,7 +449,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           <option value="">-- اختيـاري --</option>
                           {observers.map((o) => {
                             const isAvail = isObserverAvailableOnDay(o, currentDayName)
-                            const isConf = conflicts.includes(o.name)
+                            const isConf = conflicts.includes(o.name.trim())
                             const prefix = isConf ? '⚠️ ' : !isAvail ? `⏳ (غير متاح ${currentDayName}) ` : ''
                             return (
                               <option key={o.id} value={o.name}>
@@ -459,7 +474,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           <option value="">-- اختيـاري --</option>
                           {observers.map((o) => {
                             const isAvail = isObserverAvailableOnDay(o, currentDayName)
-                            const isConf = conflicts.includes(o.name)
+                            const isConf = conflicts.includes(o.name.trim())
                             const prefix = isConf ? '⚠️ ' : !isAvail ? `⏳ (غير متاح ${currentDayName}) ` : ''
                             return (
                               <option key={o.id} value={o.name}>
@@ -475,10 +490,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         <input
                           type="number"
                           step="0.5"
-                          min="1"
-                          max="5"
+                          min="0.5"
+                          max="8"
                           value={r.duration}
-                          onChange={(e) => updateRow(r.id, 'duration', parseFloat(e.target.value) || 2)}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value)
+                            updateRow(r.id, 'duration', isNaN(val) ? 2 : Math.max(0.5, val))
+                          }}
                           className="h-7 w-12 rounded-lg border border-[#cfcfcb] bg-white text-center text-xs font-bold text-[#171717] outline-none"
                         />
                       </td>
@@ -493,7 +511,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         <button
                           type="button"
                           onClick={() => removeRow(r.id)}
-                          className="rounded p-1 text-[#c5221f] hover:bg-[#fee2e2] transition"
+                          className="rounded p-1 text-[#c5221f] hover:bg-[#fee2e2] transition cursor-pointer"
                           title="حذف هذا الصف"
                         >
                           <Trash2 className="size-3.5" />
@@ -526,7 +544,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 <button
                   type="button"
                   onClick={() => removeReserve(res)}
-                  className="rounded-full text-[#c5221f] hover:bg-[#fee2e2] p-0.5 print-hide"
+                  className="rounded-full text-[#c5221f] hover:bg-[#fee2e2] p-0.5 print-hide cursor-pointer"
                 >
                   <Trash2 className="size-2.5" />
                 </button>
@@ -543,14 +561,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           <select
             value={selectedReserveToAdd}
             onChange={(e) => setSelectedReserveToAdd(e.target.value)}
-            className="h-7.5 rounded-lg border border-[#cfcfcb] bg-white px-2 text-xs font-bold text-[#333] outline-none"
+            className="h-7.5 rounded-lg border border-[#cfcfcb] bg-white px-2 text-xs font-bold text-[#333] outline-none cursor-pointer pr-2 pl-6"
           >
             <option value="">-- اختر مراقب احتياطي --</option>
             {observers
               .filter((o) => !reserves.includes(o.name))
               .map((o) => {
                 const isAvail = isObserverAvailableOnDay(o, currentDayName)
-                const isConf = conflicts.includes(o.name)
+                const isConf = conflicts.includes(o.name.trim())
                 const prefix = isConf ? '⚠️ ' : !isAvail ? `⏳ (غير متاح ${currentDayName}) ` : ''
                 return (
                   <option key={o.id} value={o.name}>
@@ -563,7 +581,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             type="button"
             onClick={addReserve}
             disabled={!selectedReserveToAdd}
-            className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-2.5 py-1 text-xs font-bold text-white disabled:opacity-50 transition"
+            className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-2.5 py-1 text-xs font-bold text-white disabled:opacity-50 transition cursor-pointer"
           >
             <Plus className="size-3" />
             <span>إضافة احتياطي</span>
@@ -572,7 +590,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       </div>
 
       {/* Official Signatures Footer (Printable) */}
-      <div className="mt-2 flex items-center justify-between border-t border-[#dededb] pt-2 px-3 text-center text-xs font-black text-[#171717]">
+      <div className="mt-2 flex items-center justify-between border-t border-[#dededb] pt-2 px-3 text-center text-xs font-black text-[#171717] print-avoid-break">
         <div className="flex flex-col items-center">
           <p className="text-[11px] font-bold text-[#666]">رئيس لجنة الجداول:</p>
           <p className="mt-0.5 text-xs font-black">{signatures.sigTables || 'د. حياه سامي على احمد'}</p>

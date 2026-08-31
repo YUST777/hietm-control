@@ -11,6 +11,10 @@ import {
   Sparkles,
   Calendar,
   Plus,
+  Download,
+  FileUp,
+  RotateCcw,
+  ShieldCheck,
 } from 'lucide-react'
 
 interface SettingsViewProps {
@@ -23,6 +27,9 @@ interface SettingsViewProps {
   onAddAcademicYear?: (year: string) => void
   onDeleteAcademicYear?: (year: string) => void
   onSetCurrentYear?: (year: string) => void
+  onExportBackup?: () => void
+  onImportBackup?: (jsonStr: string) => boolean
+  onResetToDefaults?: () => void
 }
 
 const COLOR_PRESETS = [
@@ -44,6 +51,9 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
   onAddAcademicYear,
   onDeleteAcademicYear,
   onSetCurrentYear,
+  onExportBackup,
+  onImportBackup,
+  onResetToDefaults,
 }) => {
   // Signatures State
   const [sigTables, setSigTables] = useState(signatures.sigTables)
@@ -75,6 +85,26 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
         }
       }
       reader.readAsDataURL(file)
+    }
+  }
+
+  // Handle Import JSON Backup File
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && onImportBackup) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const text = event.target?.result as string
+        if (text) {
+          const success = onImportBackup(text)
+          if (success) {
+            alert('تم استيراد واستعادة البيانات بنجاح ✓')
+          } else {
+            alert('خطأ: ملف النسخة الاحتياطية غير صالح')
+          }
+        }
+      }
+      reader.readAsText(file)
     }
   }
 
@@ -191,7 +221,7 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setLogoUrl('')}
-                        className="flex items-center justify-center gap-1 rounded-lg border border-[#fee2e2] bg-[#fff5f5] px-2 py-1 text-[11px] font-bold text-[#c5221f] hover:bg-[#fee2e2] transition"
+                        className="flex items-center justify-center gap-1 rounded-lg border border-[#fee2e2] bg-[#fff5f5] px-2 py-1 text-[11px] font-bold text-[#c5221f] hover:bg-[#fee2e2] transition cursor-pointer"
                       >
                         <Trash2 className="size-3" />
                         <span>استعادة الأيقونة الافتراضية</span>
@@ -212,7 +242,7 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                         key={p.hex}
                         type="button"
                         onClick={() => setPrimaryColor(p.hex)}
-                        className={`flex items-center gap-1.5 rounded-lg border p-1.5 text-[11px] font-bold transition text-right ${
+                        className={`flex items-center gap-1.5 rounded-lg border p-1.5 text-[11px] font-bold transition text-right cursor-pointer ${
                           isSelected
                             ? 'border-black bg-white shadow-xs ring-1 ring-black'
                             : 'border-[#dededb] bg-[#fafaf8] hover:bg-white'
@@ -383,7 +413,7 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onDeleteAcademicYear && onDeleteAcademicYear(y)}
-                      className="rounded-full text-[#aaa] hover:bg-[#fee2e2] hover:text-[#c5221f] p-0.5 transition"
+                      className="rounded-full text-[#aaa] hover:bg-[#fee2e2] hover:text-[#c5221f] p-0.5 transition cursor-pointer"
                       title="حذف هذا العام"
                     >
                       <Trash2 className="size-3" />
@@ -406,7 +436,7 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
                 type="button"
                 onClick={handleAddYear}
                 disabled={!newYearInput.trim()}
-                className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition"
+                className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition cursor-pointer"
               >
                 <Plus className="size-3.5" />
                 <span>إضافة عام</span>
@@ -415,11 +445,71 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
 
+        {/* Section 4: Backup & Data Recovery (Edge Case Protection) */}
+        <div className="rounded-2xl border border-[#dededb] bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2.5 border-b border-[#ecece9] pb-3 mb-3">
+            <div
+              className="grid size-9 place-items-center rounded-xl text-white shadow-xs"
+              style={{ backgroundColor: '#0f766e' }}
+            >
+              <ShieldCheck className="size-4.5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-[#171717]">إدارة النسخ الاحتياطي وحماية البيانات</h2>
+              <p className="text-[11px] font-semibold text-[#777]">
+                تصدير واستيراد وحفظ نسخ احتياطية كاملة لجميع بيانات الجداول والكنترول
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Export Backup */}
+              {onExportBackup && (
+                <button
+                  type="button"
+                  onClick={onExportBackup}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#cfcfcb] bg-[#fafaf8] px-3.5 py-2 text-xs font-bold text-[#171717] hover:bg-[#eaeae7] transition cursor-pointer"
+                >
+                  <Download className="size-4 text-[#1f4d78]" />
+                  <span>تصدير نسخة احتياطية (JSON)</span>
+                </button>
+              )}
+
+              {/* Import Backup */}
+              {onImportBackup && (
+                <label className="flex items-center gap-1.5 rounded-xl border border-[#cfcfcb] bg-[#fafaf8] px-3.5 py-2 text-xs font-bold text-[#171717] hover:bg-[#eaeae7] transition cursor-pointer">
+                  <FileUp className="size-4 text-[#059669]" />
+                  <span>استيراد واستعادة ملف (JSON)</span>
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    onChange={handleImportFile}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* Reset to Factory Defaults */}
+            {onResetToDefaults && (
+              <button
+                type="button"
+                onClick={onResetToDefaults}
+                className="flex items-center gap-1.5 rounded-xl border border-[#fee2e2] bg-[#fff5f5] px-3.5 py-2 text-xs font-bold text-[#c5221f] hover:bg-[#fee2e2] transition cursor-pointer"
+              >
+                <RotateCcw className="size-3.5" />
+                <span>استعادة البيانات الأصلية</span>
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Submit Button */}
         <div className="flex items-center justify-end">
           <button
             type="submit"
-            className="flex items-center gap-1.5 rounded-xl px-5 py-2 text-xs font-black text-white shadow-sm hover:opacity-90 transition"
+            className="flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-black text-white shadow-sm hover:opacity-90 transition cursor-pointer"
             style={{ backgroundColor: primaryColor }}
           >
             <Save className="size-4" />

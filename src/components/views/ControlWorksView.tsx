@@ -1,18 +1,19 @@
 import React, { useState, useMemo } from 'react'
 import type { Subject, ControlWorkSubject } from '../../types/control'
-import { CheckSquare, Search, Plus, Edit3, CheckCheck, X, Sparkles } from 'lucide-react'
+import { CheckSquare, Search, Plus, Edit3, CheckCheck } from 'lucide-react'
 import { EditSubjectModal } from '../modals/EditSubjectModal'
 
 interface ControlWorksViewProps {
   subjects: Subject[]
   controlWorks: ControlWorkSubject[]
+  controlStages?: string[]
   onToggleItem: (subjectId: string, itemIndex: number) => void
   onToggleAllItems?: (subjectId: string, setAll: boolean) => void
   onUpdateSubject: (id: string, updates: Partial<Subject>) => void
   onAddSubject: (s: Omit<Subject, 'id'>) => void
 }
 
-const CONTROL_STAGES = [
+const DEFAULT_STAGES = [
   '1) نموذج ورقة الأسئلة',
   '2) الإجابة النموذجية',
   '3) أعمال السنة',
@@ -32,6 +33,7 @@ const CONTROL_STAGES = [
 export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
   subjects,
   controlWorks,
+  controlStages = DEFAULT_STAGES,
   onToggleItem,
   onUpdateSubject,
   onAddSubject,
@@ -63,27 +65,57 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
     })
   }, [subjects, search, deptFilter])
 
-  // Overall completion rate
-  const overallRate = useMemo(() => {
-    const totalItems = subjects.length * 14
-    if (totalItems === 0) return 0
-    let completed = 0
-    subjects.forEach((s) => {
-      const chk = checklistMap.get(s.id) || {}
-      for (let i = 1; i <= 14; i++) {
-        if (chk[i]) completed++
-      }
-    })
-    return ((completed / totalItems) * 100).toFixed(1)
-  }, [subjects, checklistMap])
+  const departments = useMemo(() => {
+    const set = new Set(subjects.map((s) => s.dept).filter(Boolean))
+    return Array.from(set)
+  }, [subjects])
 
-  const handleOpenAddModal = () => {
-    setSelectedSubjectToEdit(null)
+  // Stats calculation
+  const stats = useMemo(() => {
+    let totalItems = subjects.length * controlStages.length
+    let completedItems = 0
+    let completedSubjects = 0
+
+    subjects.forEach((s) => {
+      const ch = checklistMap.get(s.id) || {}
+      let subjCompleted = 0
+      for (let i = 1; i <= controlStages.length; i++) {
+        if (ch[i]) {
+          completedItems++
+          subjCompleted++
+        }
+      }
+      if (subjCompleted === controlStages.length && controlStages.length > 0) completedSubjects++
+    })
+
+    const percentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0
+    return { totalItems, completedItems, completedSubjects, percentage }
+  }, [subjects, checklistMap, controlStages])
+
+  // Batch toggle all stages for a single subject
+  const handleToggleRowAll = (subjectId: string) => {
+    const ch = checklistMap.get(subjectId) || {}
+    let allChecked = true
+    for (let i = 1; i <= controlStages.length; i++) {
+      if (!ch[i]) {
+        allChecked = false
+        break
+      }
+    }
+    for (let i = 1; i <= controlStages.length; i++) {
+      if (ch[i] === allChecked) {
+        onToggleItem(subjectId, i)
+      }
+    }
+  }
+
+  const handleOpenEdit = (s: Subject) => {
+    setSelectedSubjectToEdit(s)
     setIsModalOpen(true)
   }
 
-  const handleOpenEditModal = (s: Subject) => {
-    setSelectedSubjectToEdit(s)
+  const handleOpenAdd = () => {
+    setSelectedSubjectToEdit(null)
     setIsModalOpen(true)
   }
 
@@ -95,50 +127,57 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
     }
   }
 
-  // Toggle all 14 items for a single subject
-  const handleToggleRowAll = (subjectId: string, makeAllDone: boolean) => {
-    for (let i = 1; i <= 14; i++) {
-      const chk = checklistMap.get(subjectId) || {}
-      const currentlyDone = !!chk[i]
-      if (makeAllDone !== currentlyDone) {
-        onToggleItem(subjectId, i)
-      }
-    }
-  }
-
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2.5">
-      {/* Top Banner & Overall Completion */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[#dededb] bg-white p-2.5 shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="grid size-9 place-items-center rounded-xl bg-[#e2ecf5] text-[#1f4d78]">
-            <CheckSquare className="size-4.5" />
-          </div>
-          <div>
+      {/* Top Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[#dededb] bg-white p-2.5 shadow-sm print-hide">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            <CheckSquare className="size-4.5 text-[#1f4d78]" />
             <h2 className="text-xs font-black text-[#171717]">
-              لوحة متابعة مراحل أعمال الكنترول (14 بند رسمي)
+              متابعة مراحل أعمال الكنترول ({controlStages.length} بنداً)
             </h2>
-            <p className="text-[11px] font-semibold text-[#777]">
-              متابعة استلام أوراق الأسئلة، نماذج الإجابة، التصحيح، ورصد الدرجات لجميع المواد
-            </p>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-left">
-            <span className="text-[9px] font-bold text-[#777] uppercase">نسبة الإنجاز الكلي</span>
-            <p className="text-base font-black text-[#155724] tabular-nums">{overallRate}%</p>
-          </div>
-          <div className="h-7 w-32 rounded-full bg-[#f0f0ee] p-1">
-            <div
-              className="h-full rounded-full bg-[#155724] transition-all"
-              style={{ width: `${overallRate}%` }}
+          <div className="relative">
+            <Search className="absolute right-2.5 top-2 size-3.5 text-[#888]" />
+            <input
+              type="text"
+              placeholder="بحث بالكود أو اسم المادة..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-7.5 w-48 rounded-lg border border-[#cfcfcb] pr-7.5 pl-2 text-xs font-semibold outline-none focus:border-[#1f4d78]"
             />
           </div>
+
+          <select
+            value={deptFilter}
+            onChange={(e) => setDeptFilter(e.target.value)}
+            className="h-7.5 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none cursor-pointer pr-2 pl-6"
+          >
+            <option value="ALL">جميع الأقسام</option>
+            {departments.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Action Buttons & Progress Badge */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 rounded-lg bg-[#eef3f8] px-3 py-1 text-xs font-bold text-[#1f4d78] border border-[#cfcfcb]">
+            <span>نسبة إنجاز الكنترول:</span>
+            <span className="font-mono font-black text-[#155724]">{stats.percentage}%</span>
+            <span className="text-[10px] text-[#666]">
+              ({stats.completedItems}/{stats.totalItems} بند)
+            </span>
+          </div>
+
           <button
             type="button"
-            onClick={handleOpenAddModal}
-            className="flex items-center gap-1.5 rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-black text-white shadow-xs hover:bg-[#163756] transition"
+            onClick={handleOpenAdd}
+            className="flex items-center gap-1.5 rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#163756] transition cursor-pointer"
           >
             <Plus className="size-3.5" />
             <span>إضافة مقرر</span>
@@ -146,166 +185,149 @@ export const ControlWorksView: React.FC<ControlWorksViewProps> = ({
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#dededb] bg-white p-2 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <Search className="absolute right-2 top-2 size-3.5 text-[#888]" />
-            <input
-              type="text"
-              placeholder="بحث في المقررات..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-7 w-52 rounded-lg border border-[#cfcfcb] pr-7 pl-2 text-xs font-semibold outline-none focus:border-[#1f4d78]"
-            />
-          </div>
-
-          <select
-            value={deptFilter}
-            onChange={(e) => setDeptFilter(e.target.value)}
-            className="h-7 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none cursor-pointer"
-          >
-            <option value="ALL">جميع الأقسام</option>
-            <option value="قسم العلوم الأساسية">قسم العلوم الأساسية</option>
-            <option value="قسم الهندسة المعمارية">قسم الهندسة المعمارية</option>
-            <option value="قسم الهندسة المدنية">قسم الهندسة المدنية</option>
-            <option value="قسم الهندسة الكهربية">قسم الهندسة الكهربية</option>
-          </select>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs font-bold text-[#555]">
-          <Sparkles className="size-3.5 text-[#1f4d78]" />
-          <span>انقر على أي خلية لتبديل حالة الإنجاز فورياً</span>
-        </div>
-      </div>
-
-      {/* 14 Stages Table */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#dededb] bg-white shadow-sm">
+      {/* Main Checklist Matrix Table */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#dededb] bg-white shadow-xs">
         <div className="min-h-0 flex-1 overflow-auto">
           <table className="w-full border-separate border-spacing-0 text-center text-xs">
             <thead className="sticky top-0 z-10 bg-[#eef3f8]">
               <tr className="text-[10px] font-black text-[#171717]">
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-10">م</th>
-                <th className="border-b border-l border-[#cfcfcb] px-3 py-1.5 text-right min-w-44">
-                  المقرر الدراسي (انقر للتعديل)
+                <th className="border-b border-l border-[#cfcfcb] px-1 py-1.5 w-8">م</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-20">الكود</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2.5 py-1.5 text-right min-w-44">
+                  المقرر الدراسي
                 </th>
-                <th className="border-b border-l border-[#cfcfcb] px-1 py-1.5 w-14">الفرقة</th>
-                {CONTROL_STAGES.map((stg, i) => (
+                <th className="border-b border-l border-[#cfcfcb] px-1 py-1.5 w-10 print-hide" title="تحديد / إلغاء تحديد الكل">
+                  الكل
+                </th>
+
+                {/* Dynamic 14 Stages Headers */}
+                {controlStages.map((title, idx) => (
                   <th
-                    key={i}
-                    title={stg}
-                    className="border-b border-l border-[#cfcfcb] px-1 py-1.5 text-[9px] min-w-16 whitespace-normal"
+                    key={idx}
+                    className="border-b border-l border-[#cfcfcb] px-1 py-1.5 w-9 cursor-help transition hover:bg-[#dbeafe]"
+                    title={title}
                   >
-                    {stg}
+                    <span className="inline-block size-5 rounded-full bg-white border border-[#cfcfcb] leading-5 text-[10px] font-black text-[#1f4d78]">
+                      {idx + 1}
+                    </span>
                   </th>
                 ))}
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-14">الإنجاز</th>
-                <th className="border-b border-[#cfcfcb] px-1.5 py-1.5 w-16">إجراء</th>
+
+                <th className="border-b border-l border-[#cfcfcb] px-1.5 py-1.5 w-14">الإنجاز</th>
+                <th className="border-b border-[#cfcfcb] px-1 py-1.5 w-12 print-hide">تعديل</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#ecece9]">
-              {filteredSubjects.map((s, idx) => {
-                const chk = checklistMap.get(s.id) || {}
-                let count = 0
-                for (let i = 1; i <= 14; i++) {
-                  if (chk[i]) count++
-                }
-                const pct = Math.round((count / 14) * 100)
-                const isAllDone = count === 14
+              {filteredSubjects.length === 0 ? (
+                <tr>
+                  <td colSpan={6 + controlStages.length} className="py-8 text-center text-xs font-bold text-[#888]">
+                    لا توجد مقررات دراسية مطابقة للبحث
+                  </td>
+                </tr>
+              ) : (
+                filteredSubjects.map((s, idx) => {
+                  const ch = checklistMap.get(s.id) || {}
+                  let completedCount = 0
+                  for (let i = 1; i <= controlStages.length; i++) {
+                    if (ch[i]) completedCount++
+                  }
+                  const rowPercentage =
+                    controlStages.length > 0 ? Math.round((completedCount / controlStages.length) * 100) : 0
+                  const isAllChecked = completedCount === controlStages.length && controlStages.length > 0
 
-                return (
-                  <tr key={s.id} className="hover:bg-[#fbfbfa] transition group">
-                    <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#888]">
-                      {idx + 1}
-                    </td>
+                  return (
+                    <tr key={s.id} className="hover:bg-[#fbfbfa] transition">
+                      <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#888]">
+                        {idx + 1}
+                      </td>
 
-                    {/* Subject Name with Quick Edit */}
-                    <td className="border-b border-l border-[#ecece9] px-3 py-1 text-right font-bold text-[#171717]">
-                      <div
-                        onClick={() => handleOpenEditModal(s)}
-                        className="cursor-pointer hover:text-[#1f4d78] hover:underline flex items-center justify-between gap-1"
-                        title="انقر لتعديل بيانات المقرر"
-                      >
-                        <span>{s.name} ({s.code})</span>
-                        <Edit3 className="size-3 text-[#aaa] opacity-0 group-hover:opacity-100 transition" />
-                      </div>
-                    </td>
+                      <td className="border-b border-l border-[#ecece9] px-1.5 py-1 font-mono font-bold text-[#1f4d78]">
+                        {s.code}
+                      </td>
 
-                    <td className="border-b border-l border-[#ecece9] px-1 py-1 font-semibold text-[#666]">
-                      {s.year}
-                    </td>
+                      <td className="border-b border-l border-[#ecece9] px-2 py-1 text-right">
+                        <div className="font-black text-[#171717]">{s.name}</div>
+                        <div className="text-[10px] text-[#666]">{s.dept} - {s.year}</div>
+                      </td>
 
-                    {CONTROL_STAGES.map((_, i) => {
-                      const itemIdx = i + 1
-                      const done = !!chk[itemIdx]
-                      return (
-                        <td
-                          key={i}
-                          onClick={() => onToggleItem(s.id, itemIdx)}
-                          className={`border-b border-l border-[#ecece9] px-1 py-1 cursor-pointer transition ${
-                            done ? 'bg-[#f0fdf4] text-[#155724]' : 'hover:bg-[#f5f5f3]'
-                          }`}
-                          title={`تبديل حالة: ${CONTROL_STAGES[i]}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={done}
-                            onChange={() => {}}
-                            className="size-3.5 rounded accent-[#155724] cursor-pointer"
-                          />
-                        </td>
-                      )
-                    })}
-
-                    {/* Progress Badge */}
-                    <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[11px] tabular-nums">
-                      <span
-                        className={`rounded px-1.5 py-0.5 text-[9px] ${
-                          pct === 100
-                            ? 'bg-[#dcfce7] text-[#155724]'
-                            : pct > 0
-                            ? 'bg-[#fef9c3] text-[#854d0e]'
-                            : 'text-[#888]'
-                        }`}
-                      >
-                        {pct}%
-                      </span>
-                    </td>
-
-                    {/* Row Quick Action */}
-                    <td className="border-b border-[#ecece9] px-1 py-1 text-center">
-                      <div className="flex items-center justify-center gap-0.5">
+                      {/* Select All Toggle for this row */}
+                      <td className="border-b border-l border-[#ecece9] px-1 py-1 print-hide">
                         <button
                           type="button"
-                          onClick={() => handleToggleRowAll(s.id, !isAllDone)}
-                          className={`rounded p-1 transition ${
-                            isAllDone
-                              ? 'text-[#c5221f] hover:bg-[#fee2e2]'
-                              : 'text-[#15803d] hover:bg-[#dcfce7]'
+                          onClick={() => handleToggleRowAll(s.id)}
+                          className={`grid size-6 place-items-center rounded transition cursor-pointer ${
+                            isAllChecked
+                              ? 'bg-[#155724] text-white hover:bg-[#0e3c18]'
+                              : 'border border-[#cfcfcb] bg-[#fafaf8] text-[#555] hover:bg-[#eef3f8]'
                           }`}
-                          title={isAllDone ? 'إلغاء تحديد كل البنود' : 'تحديد كل الـ 14 بند كمكتمل'}
+                          title={isAllChecked ? 'إلغاء تحديد جميع المراحل' : 'تحديد جميع المراحل كاملة'}
                         >
-                          {isAllDone ? <X className="size-3" /> : <CheckCheck className="size-3" />}
+                          <CheckCheck className="size-3.5" />
                         </button>
+                      </td>
+
+                      {/* 14 Interactive Stage Checkboxes */}
+                      {controlStages.map((stageTitle, stageIdx) => {
+                        const stageNumber = stageIdx + 1
+                        const isChecked = !!ch[stageNumber]
+
+                        return (
+                          <td
+                            key={stageIdx}
+                            className="border-b border-l border-[#ecece9] px-1 py-1"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => onToggleItem(s.id, stageNumber)}
+                              className={`grid size-6.5 mx-auto place-items-center rounded-lg transition cursor-pointer ${
+                                isChecked
+                                  ? 'bg-[#155724] text-white shadow-2xs hover:bg-[#0e3c18]'
+                                  : 'border border-[#cfcfcb] bg-white text-transparent hover:border-[#155724]'
+                              }`}
+                              title={`${stageTitle}: ${isChecked ? 'مكتمل ✓ (انقر للإلغاء)' : 'غير مكتمل (انقر للتعليم)'}`}
+                            >
+                              <span className="text-xs font-black">✓</span>
+                            </button>
+                          </td>
+                        )
+                      })}
+
+                      {/* Percentage Badge */}
+                      <td className="border-b border-l border-[#ecece9] px-1 py-1">
+                        <span
+                          className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-[10.5px] font-black ${
+                            rowPercentage === 100
+                              ? 'bg-[#dcfce7] text-[#166534]'
+                              : rowPercentage > 0
+                              ? 'bg-[#fef3c7] text-[#92400e]'
+                              : 'bg-[#fee2e2] text-[#991b1b]'
+                          }`}
+                        >
+                          {rowPercentage}%
+                        </span>
+                      </td>
+
+                      {/* Row Edit Modal Trigger */}
+                      <td className="border-b border-[#ecece9] px-1 py-1 print-hide">
                         <button
                           type="button"
-                          onClick={() => handleOpenEditModal(s)}
-                          className="rounded p-1 text-[#1f4d78] hover:bg-[#eef3f8] transition"
-                          title="تعديل المقرر"
+                          onClick={() => handleOpenEdit(s)}
+                          className="rounded p-1 text-[#1f4d78] hover:bg-[#eef3f8] transition cursor-pointer"
+                          title="تعديل بيانات هذا المقرر"
                         >
-                          <Edit3 className="size-3" />
+                          <Edit3 className="size-3.5" />
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Edit / Add Subject Modal */}
+      {/* Edit/Add Subject Modal */}
       <EditSubjectModal
         isOpen={isModalOpen}
         subject={selectedSubjectToEdit}

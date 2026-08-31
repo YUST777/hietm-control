@@ -15,6 +15,10 @@ import {
   INITIAL_COMMITTEES,
   INITIAL_ACADEMIC_YEARS,
   INITIAL_SIGNATURES,
+  INITIAL_PERIODS,
+  INITIAL_DEPARTMENTS,
+  INITIAL_JOB_TITLES,
+  INITIAL_CONTROL_STAGES,
 } from './initialData'
 
 const STORAGE_KEYS = {
@@ -28,6 +32,10 @@ const STORAGE_KEYS = {
   CURRENT_YEAR: 'hietm_local_year_v3',
   ACADEMIC_YEARS: 'hietm_local_academic_years_v3',
   BRANDING: 'hietm_local_branding_v3',
+  PERIODS: 'hietm_local_periods_v3',
+  DEPARTMENTS: 'hietm_local_departments_v3',
+  JOB_TITLES: 'hietm_local_job_titles_v3',
+  CONTROL_STAGES: 'hietm_local_control_stages_v3',
 }
 
 export const DEFAULT_BRANDING: SystemBranding = {
@@ -36,6 +44,16 @@ export const DEFAULT_BRANDING: SystemBranding = {
   badgeText: 'H.I.E.T',
   logoUrl: '',
   primaryColor: '#1f4d78',
+  headerLine1: 'وزارة التعليم العالي',
+  headerLine2: 'المعهد العالي للهندسة والتكنولوجيا',
+  headerLine3: 'إدارة الكنترول والجداول الامتحانية',
+}
+
+export const DEFAULT_SIGNATURES: PrintSignatures = {
+  ...INITIAL_SIGNATURES,
+  sigTablesRole: 'رئيس لجنة الجداول',
+  sigSystemRole: 'مدير النظام ورئيس الكنترول',
+  sigDeanRole: 'عميد المعهد',
 }
 
 function loadLocal<T>(key: string, fallback: T): T {
@@ -88,7 +106,7 @@ export function useControlStore() {
     loadLocal(STORAGE_KEYS.CONTROL_WORKS, [])
   )
   const [signatures, setSignatures] = useState<PrintSignatures>(() =>
-    loadLocal(STORAGE_KEYS.SIGNATURES, { ...INITIAL_SIGNATURES })
+    loadLocal(STORAGE_KEYS.SIGNATURES, { ...DEFAULT_SIGNATURES })
   )
   const [branding, setBranding] = useState<SystemBranding>(() =>
     loadLocal(STORAGE_KEYS.BRANDING, { ...DEFAULT_BRANDING })
@@ -98,6 +116,19 @@ export function useControlStore() {
   )
   const [currentYear, setCurrentYearState] = useState<string>(() =>
     loadLocal(STORAGE_KEYS.CURRENT_YEAR, INITIAL_ACADEMIC_YEARS[0] || '2024 - 2025')
+  )
+
+  const [periods, setPeriods] = useState<string[]>(() =>
+    loadLocal(STORAGE_KEYS.PERIODS, [...INITIAL_PERIODS])
+  )
+  const [departments, setDepartments] = useState<string[]>(() =>
+    loadLocal(STORAGE_KEYS.DEPARTMENTS, [...INITIAL_DEPARTMENTS])
+  )
+  const [jobTitles, setJobTitles] = useState<string[]>(() =>
+    loadLocal(STORAGE_KEYS.JOB_TITLES, [...INITIAL_JOB_TITLES])
+  )
+  const [controlStages, setControlStages] = useState<string[]>(() =>
+    loadLocal(STORAGE_KEYS.CONTROL_STAGES, [...INITIAL_CONTROL_STAGES])
   )
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced')
@@ -139,6 +170,10 @@ export function useControlStore() {
     branding,
     academicYears,
     currentYear,
+    periods,
+    departments,
+    jobTitles,
+    controlStages,
   })
 
   // Keep stateRef in sync
@@ -154,8 +189,27 @@ export function useControlStore() {
       branding,
       academicYears,
       currentYear,
+      periods,
+      departments,
+      jobTitles,
+      controlStages,
     }
-  }, [observers, subjects, committees, schedules, attendance, controlWorks, signatures, branding, academicYears, currentYear])
+  }, [
+    observers,
+    subjects,
+    committees,
+    schedules,
+    attendance,
+    controlWorks,
+    signatures,
+    branding,
+    academicYears,
+    currentYear,
+    periods,
+    departments,
+    jobTitles,
+    controlStages,
+  ])
 
   const isSyncingRef = useRef(false)
   const debounceTimerRef = useRef<any>(null)
@@ -172,6 +226,10 @@ export function useControlStore() {
   useEffect(() => saveLocal(STORAGE_KEYS.BRANDING, branding), [branding])
   useEffect(() => saveLocal(STORAGE_KEYS.ACADEMIC_YEARS, academicYears), [academicYears])
   useEffect(() => saveLocal(STORAGE_KEYS.CURRENT_YEAR, currentYear), [currentYear])
+  useEffect(() => saveLocal(STORAGE_KEYS.PERIODS, periods), [periods])
+  useEffect(() => saveLocal(STORAGE_KEYS.DEPARTMENTS, departments), [departments])
+  useEffect(() => saveLocal(STORAGE_KEYS.JOB_TITLES, jobTitles), [jobTitles])
+  useEffect(() => saveLocal(STORAGE_KEYS.CONTROL_STAGES, controlStages), [controlStages])
 
   // Push latest stateRef to cloud
   const pushToCloud = useCallback(async (isImmediate = false) => {
@@ -240,6 +298,10 @@ export function useControlStore() {
         if (d.branding && typeof d.branding === 'object') setBranding(d.branding)
         if (Array.isArray(d.academicYears) && d.academicYears.length > 0) setAcademicYears(d.academicYears)
         if (typeof d.currentYear === 'string') setCurrentYearState(d.currentYear)
+        if (Array.isArray(d.periods) && d.periods.length > 0) setPeriods(d.periods)
+        if (Array.isArray(d.departments) && d.departments.length > 0) setDepartments(d.departments)
+        if (Array.isArray(d.jobTitles) && d.jobTitles.length > 0) setJobTitles(d.jobTitles)
+        if (Array.isArray(d.controlStages) && d.controlStages.length > 0) setControlStages(d.controlStages)
       }
 
       setSyncStatus('synced')
@@ -301,6 +363,15 @@ export function useControlStore() {
     queuePush()
   }
 
+  const importObserversList = (newList: Omit<Observer, 'id'>[]) => {
+    const prepared: Observer[] = newList.map((item, idx) => ({
+      id: `${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+      ...item,
+    }))
+    setObservers((prev) => [...prepared, ...prev])
+    queuePush()
+  }
+
   const resetAllHours = () => {
     if (!window.confirm('هل تريد تصفير جميع ساعات المراقبة المسجلة لجميع المراقبين؟')) return
     setObservers((prev) => prev.map((o) => ({ ...o, hours: 0 })))
@@ -324,6 +395,15 @@ export function useControlStore() {
     queuePush()
   }
 
+  const importSubjectsList = (newList: Omit<Subject, 'id'>[]) => {
+    const prepared: Subject[] = newList.map((item, idx) => ({
+      id: `${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+      ...item,
+    }))
+    setSubjects((prev) => [...prepared, ...prev])
+    queuePush()
+  }
+
   // 3. Committees
   const updateCommittee = (id: string, updates: Partial<Committee>) => {
     setCommittees((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)))
@@ -338,6 +418,15 @@ export function useControlStore() {
 
   const deleteCommittee = (id: string) => {
     setCommittees((prev) => prev.filter((c) => c.id !== id))
+    queuePush()
+  }
+
+  const importCommitteesList = (newList: Omit<Committee, 'id'>[]) => {
+    const prepared: Committee[] = newList.map((item, idx) => ({
+      id: `${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+      ...item,
+    }))
+    setCommittees((prev) => [...prepared, ...prev])
     queuePush()
   }
 
@@ -420,6 +509,78 @@ export function useControlStore() {
     queuePush()
   }
 
+  // 8. Exam Periods Management
+  const addPeriod = (period: string) => {
+    if (!periods.includes(period)) {
+      setPeriods((prev) => [...prev, period])
+      queuePush()
+    }
+  }
+
+  const deletePeriod = (period: string) => {
+    if (periods.length <= 1) return
+    setPeriods((prev) => prev.filter((p) => p !== period))
+    queuePush()
+  }
+
+  const updatePeriodsList = (newPeriods: string[]) => {
+    setPeriods(newPeriods)
+    queuePush()
+  }
+
+  // 9. Departments Management
+  const addDepartment = (dept: string) => {
+    if (!departments.includes(dept)) {
+      setDepartments((prev) => [...prev, dept])
+      queuePush()
+    }
+  }
+
+  const deleteDepartment = (dept: string) => {
+    if (departments.length <= 1) return
+    setDepartments((prev) => prev.filter((d) => d !== dept))
+    queuePush()
+  }
+
+  const updateDepartmentsList = (newDepts: string[]) => {
+    setDepartments(newDepts)
+    queuePush()
+  }
+
+  // 10. Job Titles Management
+  const addJobTitle = (job: string) => {
+    if (!jobTitles.includes(job)) {
+      setJobTitles((prev) => [...prev, job])
+      queuePush()
+    }
+  }
+
+  const deleteJobTitle = (job: string) => {
+    if (jobTitles.length <= 1) return
+    setJobTitles((prev) => prev.filter((j) => j !== job))
+    queuePush()
+  }
+
+  const updateJobTitlesList = (newJobs: string[]) => {
+    setJobTitles(newJobs)
+    queuePush()
+  }
+
+  // 11. 14 Control Stages Customizer
+  const updateControlStageTitle = (index: number, newTitle: string) => {
+    setControlStages((prev) => {
+      const copy = [...prev]
+      copy[index] = newTitle
+      return copy
+    })
+    queuePush()
+  }
+
+  const updateAllControlStages = (newStages: string[]) => {
+    setControlStages(newStages)
+    queuePush()
+  }
+
   // Reset to original faculty defaults
   const resetToDefaults = () => {
     if (window.confirm('هل تريد استعادة جميع بيانات النظام الأصلية المعتمدة؟')) {
@@ -430,10 +591,14 @@ export function useControlStore() {
       setSchedules([])
       setAttendance([])
       setControlWorks([])
-      setSignatures({ ...INITIAL_SIGNATURES })
+      setSignatures({ ...DEFAULT_SIGNATURES })
       setBranding({ ...DEFAULT_BRANDING })
       setAcademicYears([...INITIAL_ACADEMIC_YEARS])
       setCurrentYearState(INITIAL_ACADEMIC_YEARS[0] || '2024 - 2025')
+      setPeriods([...INITIAL_PERIODS])
+      setDepartments([...INITIAL_DEPARTMENTS])
+      setJobTitles([...INITIAL_JOB_TITLES])
+      setControlStages([...INITIAL_CONTROL_STAGES])
       queuePush()
     }
   }
@@ -452,6 +617,10 @@ export function useControlStore() {
       branding,
       academicYears,
       currentYear,
+      periods,
+      departments,
+      jobTitles,
+      controlStages,
     }
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -478,6 +647,10 @@ export function useControlStore() {
       if (parsed.branding && typeof parsed.branding === 'object') setBranding(parsed.branding)
       if (Array.isArray(parsed.academicYears)) setAcademicYears(parsed.academicYears)
       if (typeof parsed.currentYear === 'string') setCurrentYearState(parsed.currentYear)
+      if (Array.isArray(parsed.periods)) setPeriods(parsed.periods)
+      if (Array.isArray(parsed.departments)) setDepartments(parsed.departments)
+      if (Array.isArray(parsed.jobTitles)) setJobTitles(parsed.jobTitles)
+      if (Array.isArray(parsed.controlStages)) setControlStages(parsed.controlStages)
 
       queuePush()
       return true
@@ -492,6 +665,7 @@ export function useControlStore() {
     updateObserver,
     addObserver,
     deleteObserver,
+    importObserversList,
     resetAllHours,
 
     subjects,
@@ -499,12 +673,14 @@ export function useControlStore() {
     updateSubject,
     addSubject,
     deleteSubject,
+    importSubjectsList,
 
     committees,
     setCommittees,
     updateCommittee,
     addCommittee,
     deleteCommittee,
+    importCommitteesList,
 
     schedules,
     setSchedules,
@@ -531,6 +707,25 @@ export function useControlStore() {
     deleteAcademicYear,
     currentYear,
     setCurrentYear: updateCurrentYear,
+
+    periods,
+    addPeriod,
+    deletePeriod,
+    updatePeriodsList,
+
+    departments,
+    addDepartment,
+    deleteDepartment,
+    updateDepartmentsList,
+
+    jobTitles,
+    addJobTitle,
+    deleteJobTitle,
+    updateJobTitlesList,
+
+    controlStages,
+    updateControlStageTitle,
+    updateAllControlStages,
 
     syncStatus,
     lastSyncTime,

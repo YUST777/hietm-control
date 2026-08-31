@@ -102,6 +102,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           branding: settingsMap['branding'] || null,
           academicYears: settingsMap['academic_years'] || null,
           currentYear: settingsMap['current_year'] || null,
+          periods: settingsMap['exam_periods'] || null,
+          departments: settingsMap['academic_departments'] || null,
+          jobTitles: settingsMap['job_titles'] || null,
+          controlStages: settingsMap['control_stages'] || null,
         },
         timestamp: new Date().toISOString(),
       })
@@ -262,12 +266,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         )
       }
 
+      if (Array.isArray(payload.periods)) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('exam_periods', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.periods)]
+        )
+      }
+
+      if (Array.isArray(payload.departments)) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('academic_departments', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.departments)]
+        )
+      }
+
+      if (Array.isArray(payload.jobTitles)) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('job_titles', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.jobTitles)]
+        )
+      }
+
+      if (Array.isArray(payload.controlStages)) {
+        await client.query(
+          `INSERT INTO public.system_settings (key, value, updated_at)
+           VALUES ('control_stages', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();`,
+          [JSON.stringify(payload.controlStages)]
+        )
+      }
+
       await client.query('COMMIT;')
       await client.end()
 
       return res.status(200).json({
         success: true,
-        message: 'All application data and settings synced fully to cloud PostgreSQL database',
+        message: 'All application data and master settings synced fully to cloud PostgreSQL database',
         timestamp: new Date().toISOString(),
       })
     }

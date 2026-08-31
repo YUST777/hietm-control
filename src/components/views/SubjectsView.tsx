@@ -1,13 +1,15 @@
 import React, { useState, useMemo } from 'react'
 import type { Subject } from '../../types/control'
-import { Search, BookOpen, Plus, Trash2, Edit3 } from 'lucide-react'
+import { Search, BookOpen, Plus, Trash2, Edit3, Download, FileUp } from 'lucide-react'
 import { EditSubjectModal } from '../modals/EditSubjectModal'
+import { exportSubjectsCSV, parseSubjectsCSV } from '../../lib/excelUtils'
 
 interface SubjectsViewProps {
   subjects: Subject[]
   onAddSubject: (s: Omit<Subject, 'id'>) => void
   onUpdateSubject: (id: string, updates: Partial<Subject>) => void
   onDeleteSubject: (id: string) => void
+  onImportSubjects?: (list: Omit<Subject, 'id'>[]) => void
 }
 
 export const SubjectsView: React.FC<SubjectsViewProps> = ({
@@ -15,6 +17,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
   onAddSubject,
   onUpdateSubject,
   onDeleteSubject,
+  onImportSubjects,
 }) => {
   const [search, setSearch] = useState('')
   const [selectedDept, setSelectedDept] = useState('ALL')
@@ -70,6 +73,26 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
     }
   }
 
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && onImportSubjects) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const text = event.target?.result as string
+        if (text) {
+          const parsed = parseSubjectsCSV(text)
+          if (parsed.length > 0) {
+            onImportSubjects(parsed)
+            alert(`تم استيراد ${parsed.length} مقرر دراسي بنجاح ✓`)
+          } else {
+            alert('لم يتم العثور على بيانات صالحة في ملف CSV')
+          }
+        }
+      }
+      reader.readAsText(file)
+    }
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2.5">
       {/* Top Toolbar */}
@@ -97,7 +120,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           <select
             value={selectedDept}
             onChange={(e) => setSelectedDept(e.target.value)}
-            className="h-7.5 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none"
+            className="h-7.5 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none cursor-pointer pr-2 pl-6"
           >
             <option value="ALL">جميع الأقسام</option>
             {departments.map((d) => (
@@ -111,7 +134,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="h-7.5 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none"
+            className="h-7.5 rounded-lg border border-[#cfcfcb] px-2 text-xs font-bold text-[#333] outline-none cursor-pointer pr-2 pl-6"
           >
             <option value="ALL">جميع الفرق</option>
             {years.map((y) => (
@@ -122,103 +145,118 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           </select>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenAddModal}
-          className="flex items-center gap-1.5 rounded-lg bg-[#1f4d78] px-3.5 py-1.5 text-xs font-black text-white shadow-xs hover:bg-[#163756] transition"
-        >
-          <Plus className="size-3.5" />
-          <span>إضافة مقرر جديد</span>
-        </button>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          {/* Export Excel/CSV */}
+          <button
+            type="button"
+            onClick={() => exportSubjectsCSV(filtered)}
+            className="flex items-center gap-1 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] px-2.5 py-1.5 text-xs font-bold text-[#333] hover:bg-[#eaeae7] transition cursor-pointer"
+            title="تصدير المقررات الحالية إلى ملف Excel / CSV"
+          >
+            <Download className="size-3.5 text-[#1f4d78]" />
+            <span>تصدير Excel</span>
+          </button>
+
+          {/* Import Excel/CSV */}
+          {onImportSubjects && (
+            <label className="flex items-center gap-1 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] px-2.5 py-1.5 text-xs font-bold text-[#333] hover:bg-[#eaeae7] transition cursor-pointer">
+              <FileUp className="size-3.5 text-[#059669]" />
+              <span>استيراد Excel</span>
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                onChange={handleImportCSV}
+                className="hidden"
+              />
+            </label>
+          )}
+
+          {/* Add Subject Button */}
+          <button
+            type="button"
+            onClick={handleOpenAddModal}
+            className="flex items-center gap-1.5 rounded-lg bg-[#1f4d78] px-3 py-1.5 text-xs font-black text-white shadow-xs hover:bg-[#163756] transition cursor-pointer"
+          >
+            <Plus className="size-3.5" />
+            <span>إضافة مقرر</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Subjects Table */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#dededb] bg-white shadow-sm">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#dededb] bg-white shadow-xs">
         <div className="min-h-0 flex-1 overflow-auto">
           <table className="w-full border-separate border-spacing-0 text-center text-xs">
             <thead className="sticky top-0 z-10 bg-[#eef3f8]">
-              <tr className="text-[10px] font-black text-[#171717]">
+              <tr className="text-[10.5px] font-black text-[#171717]">
                 <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-10">م</th>
                 <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-24">كود المقرر</th>
-                <th className="border-b border-l border-[#cfcfcb] px-3 py-1.5 text-right min-w-44">
-                  اسم المقرر الدراسي
-                </th>
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 min-w-36">القسم التابع له</th>
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-20">الفرقة</th>
-                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-20">الفصل</th>
-                <th className="border-b border-[#cfcfcb] px-2 py-1.5 w-16">إجراءات</th>
+                <th className="border-b border-l border-[#cfcfcb] px-3 py-1.5 text-right">اسم المقرر</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-44">القسم العلمي</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-28">الفرقة</th>
+                <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-24">الفصل</th>
+                <th className="border-b border-[#cfcfcb] px-2 py-1.5 w-24">الإجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#ecece9]">
-              {filtered.map((s, idx) => (
-                <tr key={s.id} className="hover:bg-[#fbfbfa] transition group">
-                  <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#888]">
-                    {idx + 1}
-                  </td>
-
-                  {/* Code */}
-                  <td className="border-b border-l border-[#ecece9] px-1.5 py-1 font-black text-[#1f4d78] tabular-nums">
-                    {s.code}
-                  </td>
-
-                  {/* Name */}
-                  <td className="border-b border-l border-[#ecece9] px-3 py-1 text-right font-bold text-[#171717]">
-                    <div
-                      onClick={() => handleOpenEditModal(s)}
-                      className="cursor-pointer hover:text-[#1f4d78] hover:underline flex items-center justify-between gap-1"
-                      title="انقر لتعديل بيانات المقرر"
-                    >
-                      <span>{s.name}</span>
-                      <Edit3 className="size-3 text-[#aaa] opacity-0 group-hover:opacity-100 transition" />
-                    </div>
-                  </td>
-
-                  {/* Department */}
-                  <td className="border-b border-l border-[#ecece9] px-2 py-1 font-semibold text-[#555] text-[11px]">
-                    {s.dept}
-                  </td>
-
-                  {/* Year */}
-                  <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#171717]">
-                    <span className="rounded bg-[#f0f0ee] px-2 py-0.5 text-[9.5px]">
-                      {s.year}
-                    </span>
-                  </td>
-
-                  {/* Semester */}
-                  <td className="border-b border-l border-[#ecece9] px-1 py-1 font-semibold text-[#666] text-[10px]">
-                    {s.semester === 'اول' ? 'الأول' : 'الثاني'}
-                  </td>
-
-                  {/* Actions */}
-                  <td className="border-b border-[#ecece9] px-1 py-1 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditModal(s)}
-                        className="rounded p-1 text-[#1f4d78] hover:bg-[#eef3f8] transition"
-                        title="تعديل المقرر"
-                      >
-                        <Edit3 className="size-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(s.id, s.name)}
-                        className="rounded p-1 text-[#c5221f] hover:bg-[#fee2e2] transition"
-                        title="حذف المقرر"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </div>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-xs font-bold text-[#888]">
+                    لا توجد مقررات مطابقة لمعايير البحث
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((s, idx) => (
+                  <tr key={s.id} className="hover:bg-[#fbfbfa] transition">
+                    <td className="border-b border-l border-[#ecece9] px-2 py-1.5 font-bold text-[#888]">
+                      {idx + 1}
+                    </td>
+                    <td className="border-b border-l border-[#ecece9] px-2 py-1.5 font-mono font-bold text-[#1f4d78]">
+                      {s.code}
+                    </td>
+                    <td className="border-b border-l border-[#ecece9] px-3 py-1.5 text-right font-black text-[#171717]">
+                      {s.name}
+                    </td>
+                    <td className="border-b border-l border-[#ecece9] px-2 py-1.5 font-bold text-[#555]">
+                      {s.dept}
+                    </td>
+                    <td className="border-b border-l border-[#ecece9] px-2 py-1.5 font-semibold text-[#555]">
+                      {s.year}
+                    </td>
+                    <td className="border-b border-l border-[#ecece9] px-2 py-1.5 font-semibold text-[#555]">
+                      {s.semester}
+                    </td>
+                    <td className="border-b border-[#ecece9] px-2 py-1.5">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(s)}
+                          className="flex items-center gap-1 rounded bg-[#eef3f8] px-2 py-1 text-[11px] font-bold text-[#1f4d78] hover:bg-[#dbeafe] transition cursor-pointer"
+                          title="تعديل بيانات المقرر"
+                        >
+                          <Edit3 className="size-3" />
+                          <span>تعديل</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(s.id, s.name)}
+                          className="rounded p-1 text-[#c5221f] hover:bg-[#fee2e2] transition cursor-pointer"
+                          title="حذف هذا المقرر"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Edit / Add Subject Modal */}
+      {/* Edit/Add Subject Modal */}
       <EditSubjectModal
         isOpen={isModalOpen}
         subject={selectedSubjectToEdit}

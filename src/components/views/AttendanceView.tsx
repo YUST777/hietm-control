@@ -28,10 +28,11 @@ interface AttendanceViewProps {
   signatures: PrintSignatures
   branding: SystemBranding
   currentYear: string
+  periods?: string[]
   onSaveAttendance: (records: DailyAttendanceRecord[]) => void
 }
 
-const PERIODS = [
+const DEFAULT_PERIODS = [
   'الفترة الأولى (9:00 - 11:00)',
   'الفترة الثانية (11:30 - 1:30)',
   'الفترة الثالثة (2:00 - 4:00)',
@@ -55,10 +56,11 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   signatures,
   branding,
   currentYear,
+  periods = DEFAULT_PERIODS,
   onSaveAttendance,
 }) => {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
-  const [period, setPeriod] = useState(PERIODS[0])
+  const [period, setPeriod] = useState(periods[0] || DEFAULT_PERIODS[0])
   const [search, setSearch] = useState('')
 
   const currentDayName = useMemo(() => getArabicDayName(date), [date])
@@ -279,7 +281,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               onChange={(e) => setPeriod(e.target.value)}
               className="bg-transparent text-xs font-bold text-[#171717] outline-none cursor-pointer pr-2 pl-6"
             >
-              {PERIODS.map((p) => (
+              {periods.map((p) => (
                 <option key={p} value={p}>
                   {p}
                 </option>

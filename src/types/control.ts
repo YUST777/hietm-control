@@ -69,6 +69,9 @@ export interface PrintSignatures {
   sigSystem: string
   sigTables: string
   sigDean: string
+  sigSystemRole?: string
+  sigTablesRole?: string
+  sigDeanRole?: string
 }
 
 export interface SystemBranding {
@@ -77,6 +80,9 @@ export interface SystemBranding {
   badgeText: string
   logoUrl?: string
   primaryColor: string
+  headerLine1?: string
+  headerLine2?: string
+  headerLine3?: string
 }
 
 export type MainTab = 'proctoring' | 'subjects' | 'control' | 'settings'

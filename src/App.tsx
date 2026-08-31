@@ -30,17 +30,20 @@ export function App() {
     updateObserver,
     addObserver,
     deleteObserver,
+    importObserversList,
     resetAllHours,
 
     subjects,
     updateSubject,
     addSubject,
     deleteSubject,
+    importSubjectsList,
 
     committees,
     updateCommittee,
     addCommittee,
     deleteCommittee,
+    importCommitteesList,
 
     schedules,
     saveScheduleSlot,
@@ -63,6 +66,21 @@ export function App() {
     currentYear,
     setCurrentYear,
 
+    periods,
+    addPeriod,
+    deletePeriod,
+
+    departments,
+    addDepartment,
+    deleteDepartment,
+
+    jobTitles,
+    addJobTitle,
+    deleteJobTitle,
+
+    controlStages,
+    updateAllControlStages,
+
     syncStatus,
     lastSyncTime,
     manualSync,
@@ -70,6 +88,9 @@ export function App() {
     exportBackup,
     importBackup,
   } = useControlStore()
+
+  // Zoom Level for entire app
+  const [zoomLevel, setZoomLevel] = useState(100)
 
   // Toast state
   const [toasts, setToasts] = useState<ToastMessage[]>([])
@@ -99,14 +120,9 @@ export function App() {
     showToast('تم حذف المراقب من قاعدة البيانات', 'info')
   }
 
-  const handleResetHours = () => {
-    resetAllHours()
-    showToast('تم تصفير عداد الساعات لجميع المراقبين', 'info')
-  }
-
   const handleUpdateSubject = (id: string, updates: Partial<Subject>) => {
     updateSubject(id, updates)
-    showToast('تم تحديث بيانات المقرر الدراسي بنجاح ✓')
+    showToast('تم تحديث المقرر الدراسي بنجاح ✓')
   }
 
   const handleAddSubject = (s: Omit<Subject, 'id'>) => {
@@ -126,7 +142,7 @@ export function App() {
 
   const handleAddCommittee = (c: Omit<Committee, 'id'>) => {
     addCommittee(c)
-    showToast(`تمت إضافة لجنة ${c.roomNum} بنجاح ✓`)
+    showToast(`تمت إضافة اللجنة رقم ${c.roomNum} بنجاح ✓`)
   }
 
   const handleDeleteCommittee = (id: string) => {
@@ -136,12 +152,12 @@ export function App() {
 
   const handleSaveSlot = (slot: ScheduleSlot) => {
     saveScheduleSlot(slot)
-    showToast('تم حفظ جدول توزيع المراقبات بنجاح ✓')
+    showToast('تم حفظ واعتماد جدول التوزيع الامتحاني بنجاح ✓')
   }
 
   const handleSaveAttendance = (records: DailyAttendanceRecord[]) => {
     setAttendance(records)
-    showToast('تم حفظ وتوثيق كشف الحضور اليومي بنجاح ✓')
+    showToast('تم حفظ كشف الحضور والغياب اليومي بنجاح ✓')
   }
 
   const handleSaveSignatures = (sigs: PrintSignatures) => {
@@ -151,39 +167,30 @@ export function App() {
 
   const handleSaveBranding = (newBranding: SystemBranding) => {
     updateBranding(newBranding)
-    showToast('تم حفظ وتحديث هوية المعهد والألوان بنجاح ✓')
+    showToast('تم تحديث وحفظ هوية المعهد وألوان النظام بنجاح ✓')
   }
 
-  // Zoom level state - default to 75% for wide overview without scroll
-  const [zoomLevel, setZoomLevel] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('hietm_zoom_level_v3')
-      if (saved) return parseFloat(saved)
-    } catch (e) {
-      console.error(e)
-    }
-    return 0.75
-  })
-
-  // Apply zoom to document.documentElement so the whole viewport reflows seamlessly
-  useEffect(() => {
-    try {
-      document.documentElement.style.zoom = String(zoomLevel)
-      localStorage.setItem('hietm_zoom_level_v3', zoomLevel.toString())
-    } catch (e) {
-      console.error(e)
-    }
-  }, [zoomLevel])
-
+  // Active Main Navigation Tab
   const [activeMainTab, setActiveMainTab] = useState<MainTab>('proctoring')
-  const [activeSubTab, setActiveSubTab] = useState<ProctoringSubTab>('schedule')
+  // Active Sub-Tab under Proctoring & Exam Tables
+  const [activeProctoringTab, setActiveProctoringTab] = useState<ProctoringSubTab>('schedule')
+
+  // Auto-sync status feedback on sync complete
+  useEffect(() => {
+    if (syncStatus === 'synced' && lastSyncTime) {
+      // Optional subtle indicator
+    }
+  }, [syncStatus, lastSyncTime])
 
   return (
-    <main className="flex h-full w-full flex-col overflow-hidden bg-[#f7f7f5] p-2 sm:p-2.5 text-[#171717]">
-      {/* Top Navbar */}
+    <main className="flex h-screen w-screen flex-col overflow-hidden bg-[#fafaf8] text-[#171717] font-sans antialiased select-none" dir="rtl">
+      {/* Top Application Bar */}
       <Navbar
         currentYear={currentYear}
-        setCurrentYear={setCurrentYear}
+        setCurrentYear={(year: string) => {
+          setCurrentYear(year)
+          showToast(`تم تغيير العام الجامعي النشط إلى: ${year}`)
+        }}
         academicYears={academicYears}
         totalObservers={observers.length}
         totalSubjects={subjects.length}
@@ -193,43 +200,38 @@ export function App() {
         syncStatus={syncStatus}
         lastSyncTime={lastSyncTime}
         branding={branding}
-        onManualSync={async () => {
-          await manualSync()
-          showToast('تمت مزامنة البيانات مع قاعدة البيانات السحابية 🔄')
+        onManualSync={() => {
+          manualSync()
+          showToast('جاري مزامنة وحفظ البيانات سحابياً...')
         }}
-        onReset={() => {
-          resetToDefaults()
-          showToast('تمت استعادة البيانات الأصلية المعتمدة', 'info')
-        }}
-        onExport={() => {
-          exportBackup()
-          showToast('تم تنزيل النسخة الاحتياطية بنجاح 💾')
-        }}
+        onReset={resetToDefaults}
+        onExport={exportBackup}
         onPrint={() => window.print()}
       />
 
-      {/* Navigation Tabs */}
+      {/* Main & Sub Navigation Tabs */}
       <NavigationTabs
         activeMainTab={activeMainTab}
         setActiveMainTab={setActiveMainTab}
-        activeSubTab={activeSubTab}
-        setActiveSubTab={setActiveSubTab}
+        activeSubTab={activeProctoringTab}
+        setActiveSubTab={setActiveProctoringTab}
       />
 
-      {/* Main Content Area */}
-      <div className="flex min-h-0 flex-1 flex-col">
+      {/* Dynamic View Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2.5">
         {activeMainTab === 'proctoring' && (
           <>
-            {activeSubTab === 'hours' && (
+            {activeProctoringTab === 'hours' && (
               <HoursDashboardView
                 observers={observers}
                 onUpdateObserver={handleUpdateObserver}
                 onAddObserver={handleAddObserver}
                 onDeleteObserver={handleDeleteObserver}
-                onResetHours={handleResetHours}
+                onResetHours={resetAllHours}
               />
             )}
-            {activeSubTab === 'schedule' && (
+
+            {activeProctoringTab === 'schedule' && (
               <ScheduleView
                 observers={observers}
                 subjects={subjects}
@@ -237,29 +239,37 @@ export function App() {
                 schedules={schedules}
                 currentYear={currentYear}
                 signatures={signatures}
+                periods={periods}
                 onSaveSlot={handleSaveSlot}
               />
             )}
-            {activeSubTab === 'days' && (
+
+            {activeProctoringTab === 'days' && (
               <ObserverDaysView
                 observers={observers}
                 onUpdateObserver={handleUpdateObserver}
                 onAddObserver={handleAddObserver}
                 onUpdateObserverDays={(id, days) => {
                   updateObserver(id, { days })
-                  showToast('تم تحديث أيام الحضور بنجاح ✓')
+                  showToast('تم تحديث أيام التفرغ بنجاح ✓')
                 }}
               />
             )}
-            {activeSubTab === 'committees' && (
+
+            {activeProctoringTab === 'committees' && (
               <CommitteesView
                 committees={committees}
                 onAddCommittee={handleAddCommittee}
                 onUpdateCommittee={handleUpdateCommittee}
                 onDeleteCommittee={handleDeleteCommittee}
+                onImportCommittees={(list) => {
+                  importCommitteesList(list)
+                  showToast(`تم استيراد ${list.length} لجنة بنجاح ✓`)
+                }}
               />
             )}
-            {activeSubTab === 'attendance' && (
+
+            {activeProctoringTab === 'attendance' && (
               <AttendanceView
                 observers={observers}
                 schedules={schedules}
@@ -267,10 +277,12 @@ export function App() {
                 signatures={signatures}
                 branding={branding}
                 currentYear={currentYear}
+                periods={periods}
                 onSaveAttendance={handleSaveAttendance}
               />
             )}
-            {activeSubTab === 'status' && (
+
+            {activeProctoringTab === 'status' && (
               <ObserverStatusView
                 observers={observers}
                 schedules={schedules}
@@ -280,6 +292,10 @@ export function App() {
                 currentYear={currentYear}
                 onUpdateObserver={handleUpdateObserver}
                 onAddObserver={handleAddObserver}
+                onImportObservers={(list) => {
+                  importObserversList(list)
+                  showToast(`تم استيراد ${list.length} مراقب بنجاح ✓`)
+                }}
               />
             )}
           </>
@@ -291,6 +307,10 @@ export function App() {
             onAddSubject={handleAddSubject}
             onUpdateSubject={handleUpdateSubject}
             onDeleteSubject={handleDeleteSubject}
+            onImportSubjects={(list) => {
+              importSubjectsList(list)
+              showToast(`تم استيراد ${list.length} مقرر دراسي بنجاح ✓`)
+            }}
           />
         )}
 
@@ -298,6 +318,7 @@ export function App() {
           <ControlWorksView
             subjects={subjects}
             controlWorks={controlWorks}
+            controlStages={controlStages}
             onToggleItem={(subjId, itemIdx) => {
               toggleControlStage(subjId, itemIdx)
               showToast('تم تحديث بند الكنترول بنجاح ✓')
@@ -313,6 +334,10 @@ export function App() {
             branding={branding}
             academicYears={academicYears}
             currentYear={currentYear}
+            periods={periods}
+            departments={departments}
+            jobTitles={jobTitles}
+            controlStages={controlStages}
             onSaveSignatures={handleSaveSignatures}
             onSaveBranding={handleSaveBranding}
             onAddAcademicYear={(year) => {
@@ -326,6 +351,34 @@ export function App() {
             onSetCurrentYear={(year) => {
               setCurrentYear(year)
               showToast(`تم تعيين العام الجامعي النشط: "${year}" ✓`)
+            }}
+            onAddPeriod={(p) => {
+              addPeriod(p)
+              showToast(`تمت إضافة الفترة: "${p}" بنجاح ✓`)
+            }}
+            onDeletePeriod={(p) => {
+              deletePeriod(p)
+              showToast(`تم حذف الفترة: "${p}"`, 'info')
+            }}
+            onAddDepartment={(d) => {
+              addDepartment(d)
+              showToast(`تمت إضافة القسم: "${d}" بنجاح ✓`)
+            }}
+            onDeleteDepartment={(d) => {
+              deleteDepartment(d)
+              showToast(`تم حذف القسم: "${d}"`, 'info')
+            }}
+            onAddJobTitle={(j) => {
+              addJobTitle(j)
+              showToast(`تمت إضافة الدرجة الوظيفية: "${j}" بنجاح ✓`)
+            }}
+            onDeleteJobTitle={(j) => {
+              deleteJobTitle(j)
+              showToast(`تم حذف الدرجة الوظيفية: "${j}"`, 'info')
+            }}
+            onUpdateControlStages={(stages) => {
+              updateAllControlStages(stages)
+              showToast('تم تحديث وحفظ مسميات بنود الكنترول الـ 14 بنجاح ✓')
             }}
             onExportBackup={() => {
               exportBackup()

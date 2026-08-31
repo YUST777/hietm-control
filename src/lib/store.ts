@@ -99,13 +99,29 @@ export function useControlStore() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced')
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null)
 
-  // Apply primary color variable to CSS dynamically
+  // Dynamically update document title, favicon and CSS theme variables
   useEffect(() => {
     try {
       const color = branding.primaryColor || '#1f4d78'
       document.documentElement.style.setProperty('--primary-color', color)
+
+      // Set Document / Window Title
+      const appTitle = branding.appName || 'نظام الكنترول وتوزيع المراقبات'
+      const instTitle = branding.instituteName ? branding.instituteName.split('—')[0].trim() : 'المعهد العالي للهندسة'
+      document.title = `${appTitle} | ${instTitle}`
+
+      // Update Favicon if custom logo provided
+      if (branding.logoUrl) {
+        let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']")
+        if (!link) {
+          link = document.createElement('link')
+          link.rel = 'icon'
+          document.getElementsByTagName('head')[0].appendChild(link)
+        }
+        link.href = branding.logoUrl
+      }
     } catch {}
-  }, [branding.primaryColor])
+  }, [branding.primaryColor, branding.appName, branding.instituteName, branding.logoUrl])
 
   // Refs to avoid unnecessary effect triggers
   const stateRef = useRef({

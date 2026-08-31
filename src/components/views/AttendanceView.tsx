@@ -60,7 +60,6 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [period, setPeriod] = useState(PERIODS[0])
   const [search, setSearch] = useState('')
-  const [selectedExtraProctor, setSelectedExtraProctor] = useState('')
 
   const currentDayName = useMemo(() => getArabicDayName(date), [date])
   const primaryColor = branding.primaryColor || '#1f4d78'
@@ -152,47 +151,64 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     }
   }, [date, period, slotAssignedProctors, attendance, observers])
 
-  // Update single record status
-  const updateStatus = (
-    observerName: string,
-    status: 'present' | 'absent' | 'late' | 'excused'
-  ) => {
-    setLocalRecords((prev) =>
-      prev.map((r) => (r.observerName === observerName ? { ...r, status } : r))
-    )
-  }
-
-  // Update notes
-  const updateNotes = (observerName: string, notes: string) => {
-    setLocalRecords((prev) =>
-      prev.map((r) => (r.observerName === observerName ? { ...r, notes } : r))
-    )
-  }
-
-  // Add extra proctor to current attendance sheet
-  const handleAddExtraProctor = () => {
-    if (!selectedExtraProctor) return
-    const alreadyExists = localRecords.some((r) => r.observerName === selectedExtraProctor)
-    if (alreadyExists) {
-      alert('هذا المراقب مضاف بالفعل في كشف الحضور')
-      return
-    }
-    const obsObj = observers.find((o) => o.name === selectedExtraProctor)
+  // Add 100% empty editable row immediately on click (Instant 1-Click)
+  const handleAddEmptyProctorRow = () => {
     const newRecord: DailyAttendanceRecord = {
       date,
       period,
-      observerId: obsObj?.id || String(Date.now()),
-      observerName: selectedExtraProctor,
+      observerId: `new_${Date.now()}`,
+      observerName: '',
       status: 'present',
       notes: 'مراقب إضافي / بديل',
     }
-    setLocalRecords((prev) => [...prev, newRecord])
-    setSelectedExtraProctor('')
+    setLocalRecords((prev) => [newRecord, ...prev])
+  }
+
+  // Update single record observer name
+  const updateObserverName = (index: number, newName: string) => {
+    setLocalRecords((prev) => {
+      const copy = [...prev]
+      if (copy[index]) {
+        const obsObj = observers.find((o) => o.name === newName)
+        copy[index] = {
+          ...copy[index],
+          observerName: newName,
+          observerId: obsObj?.id || copy[index].observerId,
+          notes: copy[index].notes || obsObj?.job || 'مراقب',
+        }
+      }
+      return copy
+    })
+  }
+
+  // Update single record status
+  const updateStatus = (
+    index: number,
+    status: 'present' | 'absent' | 'late' | 'excused'
+  ) => {
+    setLocalRecords((prev) => {
+      const copy = [...prev]
+      if (copy[index]) {
+        copy[index] = { ...copy[index], status }
+      }
+      return copy
+    })
+  }
+
+  // Update notes
+  const updateNotes = (index: number, notes: string) => {
+    setLocalRecords((prev) => {
+      const copy = [...prev]
+      if (copy[index]) {
+        copy[index] = { ...copy[index], notes }
+      }
+      return copy
+    })
   }
 
   // Remove proctor from sheet
-  const handleRemoveRecord = (observerName: string) => {
-    setLocalRecords((prev) => prev.filter((r) => r.observerName !== observerName))
+  const handleRemoveRecord = (index: number) => {
+    setLocalRecords((prev) => prev.filter((_, idx) => idx !== index))
   }
 
   // Mark all present
@@ -203,13 +219,10 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   // Save current sheet
   const handleSave = () => {
     const otherRecords = attendance.filter((a) => !(a.date === date && a.period === period))
-    onSaveAttendance([...otherRecords, ...localRecords])
+    // Filter out rows without names
+    const validRecords = localRecords.filter((r) => r.observerName.trim())
+    onSaveAttendance([...otherRecords, ...validRecords])
   }
-
-  // Filtered display
-  const filteredRecords = useMemo(() => {
-    return localRecords.filter((r) => !search || r.observerName.toLowerCase().includes(search.toLowerCase()))
-  }, [localRecords, search])
 
   // KPI Summary
   const stats = useMemo(() => {
@@ -287,35 +300,18 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           </div>
         </div>
 
-        {/* Add Proctor Dropdown & Action Buttons */}
+        {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Add extra proctor to sheet */}
-          <div className="flex items-center gap-1">
-            <select
-              value={selectedExtraProctor}
-              onChange={(e) => setSelectedExtraProctor(e.target.value)}
-              className="h-7.5 w-44 rounded-lg border border-[#cfcfcb] bg-white px-2 text-xs font-bold text-[#333] outline-none cursor-pointer pr-2 pl-6"
-            >
-              <option value="">-- إضافة مراقب للكشف --</option>
-              {observers
-                .filter((o) => !localRecords.some((r) => r.observerName === o.name))
-                .map((o) => (
-                  <option key={o.id} value={o.name}>
-                    {o.name} ({o.job})
-                  </option>
-                ))}
-            </select>
-            <button
-              type="button"
-              onClick={handleAddExtraProctor}
-              disabled={!selectedExtraProctor}
-              className="flex items-center gap-1 rounded-lg bg-[#1f4d78] px-2.5 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition"
-              title="إضافة المراقب المحدد إلى كشف الحضور"
-            >
-              <Plus className="size-3.5" />
-              <span>إضافة</span>
-            </button>
-          </div>
+          {/* Direct Add Empty Row Button (Instant 1-Click) */}
+          <button
+            type="button"
+            onClick={handleAddEmptyProctorRow}
+            className="flex items-center gap-1.5 rounded-lg bg-[#1f4d78] px-3.5 py-1.5 text-xs font-black text-white shadow-xs hover:bg-[#163756] transition cursor-pointer"
+            title="إضافة صف مراقب جديد للكشف"
+          >
+            <Plus className="size-3.5" />
+            <span>إضافة مراقب للكشف</span>
+          </button>
 
           {/* Quick stats pills */}
           <div className="hidden xl:flex items-center gap-1.5 text-[11px] font-bold">
@@ -334,7 +330,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           <button
             type="button"
             onClick={handleMarkAllPresent}
-            className="flex items-center gap-1 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] px-2.5 py-1.5 text-xs font-bold text-[#333] hover:bg-[#eaeae7] transition"
+            className="flex items-center gap-1 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] px-2.5 py-1.5 text-xs font-bold text-[#333] hover:bg-[#eaeae7] transition cursor-pointer"
           >
             <CheckCircle2 className="size-3.5 text-[#15803d]" />
             <span>الكل حاضر</span>
@@ -344,7 +340,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:opacity-90 transition"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:opacity-90 transition cursor-pointer"
             style={{ backgroundColor: '#155724' }}
           >
             <Save className="size-3.5" />
@@ -355,7 +351,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           <button
             type="button"
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:opacity-90 transition"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:opacity-90 transition cursor-pointer"
             style={{ backgroundColor: primaryColor }}
           >
             <Printer className="size-3.5" />
@@ -393,8 +389,8 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             <thead className="sticky top-0 z-10 bg-[#eef3f8]">
               <tr className="text-[10px] font-black text-[#171717]">
                 <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 w-10">م</th>
-                <th className="border-b border-l border-[#cfcfcb] px-3 py-1.5 text-right min-w-48">
-                  اسم المراقب / الملاحظ
+                <th className="border-b border-l border-[#cfcfcb] px-3 py-1.5 text-right min-w-56">
+                  اسم المراقب / الملاحظ (اختيار من القائمة)
                 </th>
                 <th className="border-b border-l border-[#cfcfcb] px-2 py-1.5 min-w-36">
                   الوظيفة / التكليف
@@ -408,127 +404,138 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#ecece9]">
-              {filteredRecords.length === 0 ? (
+              {localRecords.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-xs font-bold text-[#888]">
-                    لا توجد سجلات حضور لهذه الفترة. استخدم القائمة أعلاه لإضافة مراقبين للكشف.
+                    لا توجد سجلات حضور لهذه الفترة. انقر على زر "إضافة مراقب للكشف" أعلاه للبدء.
                   </td>
                 </tr>
               ) : (
-                filteredRecords.map((r, idx) => {
-                  const obsObj = observers.find((o) => o.name === r.observerName)
-                  return (
-                    <tr key={r.observerName} className="hover:bg-[#fbfbfa] transition">
-                      <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#888]">
-                        {idx + 1}
-                      </td>
+                localRecords
+                  .map((r, actualIdx) => ({ r, actualIdx }))
+                  .filter(({ r }) => !search || r.observerName.toLowerCase().includes(search.toLowerCase()))
+                  .map(({ r, actualIdx }, displayIdx) => {
+                    const isNewOrEmpty = !r.observerName
+                    return (
+                      <tr key={r.observerId || actualIdx} className="hover:bg-[#fbfbfa] transition">
+                        <td className="border-b border-l border-[#ecece9] px-1 py-1 font-bold text-[#888]">
+                          {displayIdx + 1}
+                        </td>
 
-                      {/* Proctor Name */}
-                      <td className="border-b border-l border-[#ecece9] px-3 py-1 text-right font-black text-[#171717]">
-                        <div className="flex items-center gap-1.5">
-                          <span>{r.observerName}</span>
-                          {obsObj && (
-                            <span className="text-[10px] font-semibold text-[#666]">
-                              ({obsObj.specialization || obsObj.job})
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Job / Assignment */}
-                      <td className="border-b border-l border-[#ecece9] px-2 py-1 text-xs font-semibold text-[#555]">
-                        <span className="rounded bg-[#f1f5f9] px-2 py-0.5 text-[10.5px] font-bold text-[#334155]">
-                          {r.notes || obsObj?.job || 'مراقب'}
-                        </span>
-                      </td>
-
-                      {/* Status Toggle Buttons */}
-                      <td className="border-b border-l border-[#ecece9] px-2 py-1 print-hide">
-                        <div className="inline-flex items-center gap-1 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] p-0.5 text-[10.5px] font-bold">
-                          <button
-                            type="button"
-                            onClick={() => updateStatus(r.observerName, 'present')}
-                            className={`flex items-center gap-1 rounded-md px-2 py-0.5 transition ${
-                              r.status === 'present'
-                                ? 'bg-[#15803d] text-white shadow-xs'
-                                : 'text-[#555] hover:bg-[#e6e6e3]'
+                        {/* Proctor Name (Dropdown selection) */}
+                        <td className="border-b border-l border-[#ecece9] px-2 py-1 text-right font-black text-[#171717]">
+                          <select
+                            value={r.observerName}
+                            onChange={(e) => updateObserverName(actualIdx, e.target.value)}
+                            className={`h-7 w-full rounded-lg border px-2 text-[11px] font-bold outline-none focus:border-[#1f4d78] truncate ${
+                              isNewOrEmpty
+                                ? 'border-[#f59e0b] bg-[#fffbeb] text-[#b45309]'
+                                : 'border-[#cfcfcb] bg-white text-[#171717]'
                             }`}
                           >
-                            <CheckCircle2 className="size-3" />
-                            <span>حاضر</span>
-                          </button>
+                            <option value="">-- اختر المراقب من القائمة --</option>
+                            {observers.map((o) => (
+                              <option key={o.id} value={o.name}>
+                                {o.name} ({o.job})
+                              </option>
+                            ))}
+                          </select>
+                        </td>
 
+                        {/* Job / Assignment */}
+                        <td className="border-b border-l border-[#ecece9] px-2 py-1 text-xs font-semibold text-[#555]">
+                          <span className="rounded bg-[#f1f5f9] px-2 py-0.5 text-[10.5px] font-bold text-[#334155]">
+                            {r.notes || 'مراقب'}
+                          </span>
+                        </td>
+
+                        {/* Status Toggle Buttons */}
+                        <td className="border-b border-l border-[#ecece9] px-2 py-1 print-hide">
+                          <div className="inline-flex items-center gap-1 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] p-0.5 text-[10.5px] font-bold">
+                            <button
+                              type="button"
+                              onClick={() => updateStatus(actualIdx, 'present')}
+                              className={`flex items-center gap-1 rounded-md px-2 py-0.5 transition cursor-pointer ${
+                                r.status === 'present'
+                                  ? 'bg-[#15803d] text-white shadow-xs'
+                                  : 'text-[#555] hover:bg-[#e6e6e3]'
+                              }`}
+                            >
+                              <CheckCircle2 className="size-3" />
+                              <span>حاضر</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => updateStatus(actualIdx, 'absent')}
+                              className={`flex items-center gap-1 rounded-md px-2 py-0.5 transition cursor-pointer ${
+                                r.status === 'absent'
+                                  ? 'bg-[#dc2626] text-white shadow-xs'
+                                  : 'text-[#555] hover:bg-[#e6e6e3]'
+                              }`}
+                            >
+                              <XCircle className="size-3" />
+                              <span>غائب</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => updateStatus(actualIdx, 'late')}
+                              className={`flex items-center gap-1 rounded-md px-2 py-0.5 transition cursor-pointer ${
+                                r.status === 'late'
+                                  ? 'bg-[#d97706] text-white shadow-xs'
+                                  : 'text-[#555] hover:bg-[#e6e6e3]'
+                              }`}
+                            >
+                              <Clock4 className="size-3" />
+                              <span>متأخر</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => updateStatus(actualIdx, 'excused')}
+                              className={`flex items-center gap-1 rounded-md px-2 py-0.5 transition cursor-pointer ${
+                                r.status === 'excused'
+                                  ? 'bg-[#2563eb] text-white shadow-xs'
+                                  : 'text-[#555] hover:bg-[#e6e6e3]'
+                              }`}
+                            >
+                              <AlertCircle className="size-3" />
+                              <span>معتذر</span>
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* Notes / Replacement */}
+                        <td className="border-b border-l border-[#ecece9] px-2 py-1">
+                          <input
+                            type="text"
+                            value={r.notes || ''}
+                            onChange={(e) => updateNotes(actualIdx, e.target.value)}
+                            placeholder="ملاحظات أو بديل..."
+                            className="h-6.5 w-full rounded border border-[#cfcfcb] bg-white px-1.5 text-xs font-semibold text-[#333] focus:border-[#1f4d78] outline-none"
+                          />
+                        </td>
+
+                        {/* Signature Cell */}
+                        <td className="border-b border-l border-[#ecece9] px-2 py-1">
+                          <div className="h-6 w-full border-b border-dotted border-[#aaa]" />
+                        </td>
+
+                        {/* Delete from Attendance Sheet */}
+                        <td className="border-b border-[#ecece9] px-1 py-1 text-center print-hide">
                           <button
                             type="button"
-                            onClick={() => updateStatus(r.observerName, 'absent')}
-                            className={`flex items-center gap-1 rounded-md px-2 py-0.5 transition ${
-                              r.status === 'absent'
-                                ? 'bg-[#dc2626] text-white shadow-xs'
-                                : 'text-[#555] hover:bg-[#e6e6e3]'
-                            }`}
+                            onClick={() => handleRemoveRecord(actualIdx)}
+                            className="rounded p-1 text-[#c5221f] hover:bg-[#fee2e2] transition cursor-pointer"
+                            title="حذف من كشف الحضور"
                           >
-                            <XCircle className="size-3" />
-                            <span>غائب</span>
+                            <Trash2 className="size-3.5" />
                           </button>
-
-                          <button
-                            type="button"
-                            onClick={() => updateStatus(r.observerName, 'late')}
-                            className={`flex items-center gap-1 rounded-md px-2 py-0.5 transition ${
-                              r.status === 'late'
-                                ? 'bg-[#d97706] text-white shadow-xs'
-                                : 'text-[#555] hover:bg-[#e6e6e3]'
-                            }`}
-                          >
-                            <Clock4 className="size-3" />
-                            <span>متأخر</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => updateStatus(r.observerName, 'excused')}
-                            className={`flex items-center gap-1 rounded-md px-2 py-0.5 transition ${
-                              r.status === 'excused'
-                                ? 'bg-[#2563eb] text-white shadow-xs'
-                                : 'text-[#555] hover:bg-[#e6e6e3]'
-                            }`}
-                          >
-                            <AlertCircle className="size-3" />
-                            <span>معتذر</span>
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Notes / Replacement */}
-                      <td className="border-b border-l border-[#ecece9] px-2 py-1">
-                        <input
-                          type="text"
-                          value={r.notes || ''}
-                          onChange={(e) => updateNotes(r.observerName, e.target.value)}
-                          placeholder="ملاحظات أو بديل..."
-                          className="h-6.5 w-full rounded border border-transparent bg-transparent px-1.5 text-xs font-semibold text-[#333] hover:border-[#cfcfcb] focus:border-[#1f4d78] focus:bg-white outline-none"
-                        />
-                      </td>
-
-                      {/* Signature Cell */}
-                      <td className="border-b border-l border-[#ecece9] px-2 py-1">
-                        <div className="h-6 w-full border-b border-dotted border-[#aaa]" />
-                      </td>
-
-                      {/* Delete from Attendance Sheet */}
-                      <td className="border-b border-[#ecece9] px-1 py-1 text-center print-hide">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveRecord(r.observerName)}
-                          className="rounded p-1 text-[#c5221f] hover:bg-[#fee2e2] transition"
-                          title="حذف من كشف الحضور"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })
+                        </td>
+                      </tr>
+                    )
+                  })
               )}
             </tbody>
           </table>

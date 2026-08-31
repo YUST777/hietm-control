@@ -23,6 +23,7 @@ import { SubjectsView } from './components/views/SubjectsView'
 import { ControlWorksView } from './components/views/ControlWorksView'
 import { SignaturesSettingsView } from './components/views/SignaturesSettingsView'
 import { ToastContainer, ToastMessage } from './components/Toast'
+import { Globe, Linkedin } from 'lucide-react'
 
 export function App() {
   const {
@@ -396,6 +397,35 @@ export function App() {
           />
         )}
       </div>
+
+      {/* Docked Bottom Developer Footer - ONLY in Settings Tab */}
+      {activeMainTab === 'settings' && (
+        <footer className="shrink-0 border-t border-[#dededb] bg-white py-1.5 px-4 text-center text-[10.5px] font-medium text-[#777] shadow-xs print-hide">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 opacity-80 hover:opacity-100 transition">
+            <span>نظام إدارة الكنترول والمراقبات | تطوير: يوسف</span>
+            <span className="text-[#ccc]">•</span>
+            <a
+              href="https://www.yust.dev/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[#1f4d78] hover:underline transition"
+            >
+              <Globe className="size-3" />
+              <span>yust.dev</span>
+            </a>
+            <span className="text-[#ccc]">•</span>
+            <a
+              href="https://www.linkedin.com/in/yousefmsm1/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[#0a66c2] hover:underline transition"
+            >
+              <Linkedin className="size-3" />
+              <span>LinkedIn</span>
+            </a>
+          </div>
+        </footer>
+      )}
 
       {/* Universal Floating Toast Notifications */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

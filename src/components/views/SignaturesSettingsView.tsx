@@ -18,8 +18,6 @@ import {
   Clock,
   Briefcase,
   ListOrdered,
-  Globe,
-  Linkedin,
 } from 'lucide-react'
 
 interface SettingsViewProps {
@@ -996,33 +994,6 @@ export const SignaturesSettingsView: React.FC<SettingsViewProps> = ({
             <Save className="size-4" />
             <span>حفظ واعتماد التعديلات</span>
           </button>
-        </div>
-
-        {/* Subtle Bottom Developer Footer (Only in Settings) */}
-        <div className="mt-1 py-1 text-center text-[10.5px] font-medium text-[#888] print-hide">
-          <div className="flex flex-wrap items-center justify-center gap-1.5 opacity-75 hover:opacity-100 transition">
-            <span>نظام إدارة الكنترول والمراقبات | تطوير: يوسف</span>
-            <span className="text-[#ccc]">•</span>
-            <a
-              href="https://www.yust.dev/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 hover:text-[#1f4d78] hover:underline transition"
-            >
-              <Globe className="size-3" />
-              <span>yust.dev</span>
-            </a>
-            <span className="text-[#ccc]">•</span>
-            <a
-              href="https://www.linkedin.com/in/yousefmsm1/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 hover:text-[#0a66c2] hover:underline transition"
-            >
-              <Linkedin className="size-3" />
-              <span>LinkedIn</span>
-            </a>
-          </div>
         </div>
       </form>
     </div>

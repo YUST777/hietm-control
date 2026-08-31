@@ -274,6 +274,7 @@ export function App() {
                 schedules={schedules}
                 currentYear={currentYear}
                 signatures={signatures}
+                branding={branding}
                 periods={periods}
                 semesters={semesters}
                 currentSemester={currentSemester}

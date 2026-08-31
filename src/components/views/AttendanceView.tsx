@@ -366,9 +366,9 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       <div className="hidden print:flex print:flex-col print:mb-3 print:border-b-2 print:border-black print:pb-2">
         <div className="flex items-center justify-between text-xs font-black">
           <div className="text-right">
-            <p>وزارة التعليم العالي</p>
-            <p>{branding.instituteName || 'المعهد العالي للهندسة والتكنولوجيا'}</p>
-            <p>إدارة الكنترول والجداول الامتحانية</p>
+            <p>{branding.headerLine1 || 'وزارة التعليم العالي'}</p>
+            <p>{branding.headerLine2 || branding.instituteName || 'المعهد العالي للهندسة والتكنولوجيا'}</p>
+            <p>{branding.headerLine3 || 'إدارة الكنترول والجداول الامتحانية'}</p>
           </div>
           <div className="text-center">
             <h2 className="text-sm font-black underline">كشف توثيق حضور وانصراف المراقبين والملاحظين</h2>

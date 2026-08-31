@@ -6,6 +6,7 @@ import type {
   ScheduleSlot,
   ScheduleRow,
   PrintSignatures,
+  SystemBranding,
 } from '../../types/control'
 import { Plus, Trash2, Save, Printer, AlertTriangle, UserCheck, RefreshCcw } from 'lucide-react'
 
@@ -16,6 +17,7 @@ interface ScheduleViewProps {
   schedules: ScheduleSlot[]
   currentYear: string
   signatures: PrintSignatures
+  branding?: SystemBranding
   periods?: string[]
   semesters?: string[]
   currentSemester?: string
@@ -53,6 +55,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   schedules,
   currentYear,
   signatures,
+  branding,
   periods = DEFAULT_PERIODS,
   semesters = DEFAULT_SEMESTERS,
   currentSemester = 'الفصل الدراسي الثاني',
@@ -259,6 +262,22 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               ))}
             </select>
           </div>
+
+          {/* Exam Type */}
+          <div className="flex items-center gap-1.5 rounded-lg border border-[#cfcfcb] bg-[#fafaf8] px-2 py-1">
+            <span className="text-[11px] font-bold text-[#555]">نوع الامتحان:</span>
+            <select
+              value={examType}
+              onChange={(e) => setExamType(e.target.value)}
+              className="bg-transparent text-xs font-bold text-[#171717] outline-none cursor-pointer pr-2 pl-6"
+            >
+              <option value="تحريري">تحريري (نظري)</option>
+              <option value="عملي / شفوي">عملي / شفوي</option>
+              <option value="منتصف الفصل (Midterm)">منتصف الفصل (Midterm)</option>
+              <option value="تخلفات وتكميلي">تخلفات وتكميلي</option>
+              <option value="امتحان دور ثاني">امتحان دور ثاني</option>
+            </select>
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -321,14 +340,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       <div className="hidden print:flex print:flex-col print:mb-3 print:border-b-2 print:border-black print:pb-2">
         <div className="flex items-center justify-between text-xs font-black">
           <div className="text-right">
-            <p>وزارة التعليم العالي</p>
-            <p>المعهد العالي للهندسة والتكنولوجيا</p>
-            <p>إدارة الكنترول والجداول الامتحانية</p>
+            <p>{branding?.headerLine1 || 'وزارة التعليم العالي'}</p>
+            <p>{branding?.headerLine2 || branding?.instituteName || 'المعهد العالي للهندسة والتكنولوجيا'}</p>
+            <p>{branding?.headerLine3 || 'إدارة الكنترول والجداول الامتحانية'}</p>
           </div>
           <div className="text-center">
             <h2 className="text-sm font-black underline">كشف توزيع الملاحظات والمراقبات الامتحانية</h2>
             <p className="text-[11px] font-bold mt-0.5">
-              العام الجامعي: {currentYear} — {semester}
+              العام الجامعي: {currentYear} — {semester} ({examType})
             </p>
           </div>
           <div className="text-left">

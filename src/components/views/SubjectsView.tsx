@@ -32,14 +32,16 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
   const [selectedSubjectToEdit, setSelectedSubjectToEdit] = useState<Subject | null>(null)
 
   const departments = useMemo(() => {
+    if (customDepartments && customDepartments.length > 0) return customDepartments
     const set = new Set(subjects.map((s) => s.dept).filter(Boolean))
     return Array.from(set)
-  }, [subjects])
+  }, [customDepartments, subjects])
 
   const years = useMemo(() => {
+    if (customStudyLevels && customStudyLevels.length > 0) return customStudyLevels
     const set = new Set(subjects.map((s) => s.year).filter(Boolean))
     return Array.from(set)
-  }, [subjects])
+  }, [customStudyLevels, subjects])
 
   const filtered = useMemo(() => {
     return subjects.filter((s) => {

@@ -43,10 +43,9 @@ export function App() {
     currentYear,
     setCurrentYear,
 
-    connectionStatus,
+    syncStatus,
     lastSyncTime,
-    fetchFromSupabase,
-    seedDatabaseFromDefaults,
+    manualSync,
     resetToDefaults,
     exportBackup,
   } = useControlStore()
@@ -116,7 +115,7 @@ export function App() {
 
   const handleSaveSlot = (slot: ScheduleSlot) => {
     saveScheduleSlot(slot)
-    showToast('تم حفظ واعتماد جدول توزيع المراقبات بنجاح ✓')
+    showToast('تم حفظ جدول توزيع المراقبات بنجاح ✓')
   }
 
   const handleSaveSignatures = (sigs: PrintSignatures) => {
@@ -160,16 +159,11 @@ export function App() {
         totalCommittees={committees.length}
         zoomLevel={zoomLevel}
         setZoomLevel={setZoomLevel}
-        connectionStatus={connectionStatus}
+        syncStatus={syncStatus}
         lastSyncTime={lastSyncTime}
-        onRefreshCloud={() => {
-          fetchFromSupabase()
-          showToast('تمت المزامنة مع قاعدة البيانات السحابية 🔄')
-        }}
-        onSeedDatabase={async () => {
-          const res = await seedDatabaseFromDefaults()
-          showToast(res.message, res.success ? 'success' : 'error')
-          return res
+        onManualSync={async () => {
+          await manualSync()
+          showToast('تمت مزامنة البيانات مع قاعدة البيانات السحابية 🔄')
         }}
         onReset={() => {
           resetToDefaults()
